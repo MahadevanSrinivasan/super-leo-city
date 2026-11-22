@@ -1,0 +1,1499 @@
+/* ============================================================================
+   SUPER LEO CITY — VICE EDITION (Kid-Friendly GTA: Vice City UI)
+   80s Miami Art-Deco Neon Palette, Crisp Outlined HUD & Mission Board
+   ============================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800;900&family=Oswald:wght@600;700&family=Pacifico&display=swap');
+
+:root {
+  --vc-pink: #ff49a8;
+  --vc-pink-soft: #ff85c8;
+  --vc-cyan: #00e5ff;
+  --vc-gold: #ffd166;
+  --vc-mint: #42f59b;
+  --vc-coral: #ff6b6b;
+  --vc-ink: #0c0718;
+  --vc-panel: rgba(12, 7, 24, 0.86);
+  --vc-panel-solid: #140b29;
+  --vc-border: rgba(255, 73, 168, 0.45);
+  --vc-outline: -2px -2px 0 #090512, 2px -2px 0 #090512, -2px 2px 0 #090512, 2px 2px 0 #090512, 0 4px 12px rgba(0, 0, 0, 0.75);
+  --vc-outline-sm: -1.5px -1.5px 0 #090512, 1.5px -1.5px 0 #090512, -1.5px 1.5px 0 #090512, 1.5px 1.5px 0 #090512, 0 2px 6px rgba(0, 0, 0, 0.7);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--vc-ink);
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: #ffffff;
+}
+
+#gameCanvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* ============================================================================
+   MAIN HUD OVERLAY (Iconic GTA: Vice City Layout)
+   ============================================================================ */
+#hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* --- TOP LEFT: Classic GTA Black-Box Pager / Active Mission Brief --- */
+.vc-top-left {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 318px;
+  max-width: 40vw;
+}
+
+.vc-pager-box {
+  background: rgba(9, 5, 18, 0.84);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top: 3px solid var(--vc-pink);
+  border-left: 3px solid var(--vc-cyan);
+  border-right: 1px solid rgba(255, 255, 255, 0.14);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 4px 12px 12px 4px;
+  padding: 10px 13px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.65);
+  pointer-events: auto;
+}
+
+.vc-pager-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.vc-giver-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.vc-mission-code {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: var(--vc-pink);
+  color: #fff;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  border: 1.5px solid #090512;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(255, 73, 168, 0.45);
+}
+
+.vc-mission-tag {
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--vc-cyan);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vc-mission-timer {
+  font-family: 'Oswald', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--vc-gold);
+  background: rgba(255, 209, 102, 0.14);
+  border: 1px solid rgba(255, 209, 102, 0.45);
+  border-radius: 4px;
+  padding: 1px 7px;
+  letter-spacing: 0.8px;
+  display: none;
+}
+
+.vc-mission-timer.active {
+  display: inline-block;
+}
+
+.vc-mission-timer.urgent {
+  color: #fff;
+  background: rgba(255, 73, 168, 0.75);
+  border-color: #fff;
+  animation: vcPulse 0.6s infinite alternate;
+}
+
+.vc-mission-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: #ffffff;
+  text-transform: uppercase;
+  line-height: 1.15;
+  margin-bottom: 3px;
+}
+
+.vc-mission-desc {
+  font-size: 12px;
+  line-height: 1.38;
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+.vc-mission-progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.vc-prog-track {
+  flex: 1;
+  height: 7px;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.6);
+}
+
+.vc-prog-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--vc-pink), var(--vc-gold));
+  transition: width 0.25s ease;
+}
+
+.vc-prog-label {
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--vc-gold);
+  letter-spacing: 0.6px;
+  white-space: nowrap;
+}
+
+.vc-pager-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.vc-compass-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--vc-mint);
+  letter-spacing: 0.5px;
+}
+
+#compassArrow {
+  display: inline-block;
+  font-size: 15px;
+  transition: transform 0.08s linear;
+}
+
+.vc-rec-ride-btn {
+  background: rgba(0, 229, 255, 0.16);
+  border: 1.5px solid var(--vc-cyan);
+  color: #ffffff;
+  border-radius: 6px;
+  padding: 3px 9px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-transform: uppercase;
+}
+
+.vc-rec-ride-btn:hover {
+  background: var(--vc-cyan);
+  color: var(--vc-ink);
+}
+
+/* Compact Hometown ZIP Strip under Pager */
+.vc-zip-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(9, 5, 18, 0.78);
+  border: 1.5px solid rgba(66, 245, 155, 0.45);
+  border-left: 3px solid var(--vc-mint);
+  border-radius: 6px;
+  padding: 6px 11px;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.vc-zip-pill:hover {
+  transform: translateY(-1px);
+  border-color: var(--vc-mint);
+}
+
+.zip-city {
+  font-family: 'Oswald', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--vc-mint);
+  letter-spacing: 0.5px;
+}
+
+.zip-meta {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+/* --- TOP CENTER: Radio Station Tuner Banner --- */
+.vc-top-center {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+#radioBanner {
+  background: rgba(9, 5, 18, 0.88);
+  border: 2px solid var(--vc-pink);
+  border-radius: 999px;
+  padding: 5px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 6px 22px rgba(255, 73, 168, 0.35);
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+#radioBanner.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.radio-wave {
+  font-size: 16px;
+}
+
+.radio-station-name {
+  font-family: 'Pacifico', cursive;
+  font-size: 18px;
+  color: var(--vc-pink-soft);
+  text-shadow: var(--vc-outline-sm);
+  line-height: 1.2;
+}
+
+.radio-station-sub {
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  color: var(--vc-cyan);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* --- TOP RIGHT: Iconic Vice City Clock, Bars, Active Slot, Cash & 6 Hero Stars --- */
+.vc-top-right {
+  position: absolute;
+  top: 12px;
+  right: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.vc-hud-cluster {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.vc-vitals-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.vc-clock {
+  font-family: 'Oswald', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 0.95;
+  color: var(--vc-cyan);
+  text-shadow: var(--vc-outline);
+  letter-spacing: 1.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.vc-cash {
+  font-family: 'Oswald', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--vc-mint);
+  text-shadow: var(--vc-outline);
+  letter-spacing: 1.2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.vc-bars-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+  width: 128px;
+}
+
+.vc-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.vc-bar-ico {
+  font-size: 11px;
+  width: 14px;
+  text-align: center;
+  text-shadow: var(--vc-outline-sm);
+}
+
+.vc-bar-track {
+  flex: 1;
+  height: 9px;
+  background: rgba(9, 5, 18, 0.85);
+  border: 2px solid #090512;
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+}
+
+.vc-bar-fill {
+  height: 100%;
+  transition: width 0.1s linear;
+}
+
+.vc-bar-fill.turbo {
+  width: 100%;
+  background: linear-gradient(90deg, #ff2a85, var(--vc-pink-soft));
+}
+
+.vc-bar-fill.hype {
+  width: 25%;
+  background: linear-gradient(90deg, #00b4d8, var(--vc-cyan));
+}
+
+/* Classic Vice City Top-Right Square Weapon/Gadget Slot */
+.vc-gadget-slot {
+  width: 78px;
+  height: 78px;
+  background: radial-gradient(circle at 30% 25%, rgba(255, 73, 168, 0.25), rgba(9, 5, 18, 0.92));
+  border: 3px solid #090512;
+  outline: 2px solid var(--vc-pink);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+
+.vc-gadget-slot:hover {
+  transform: scale(1.04);
+  outline-color: var(--vc-cyan);
+}
+
+.vc-slot-emoji {
+  font-size: 36px;
+  line-height: 1;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.6));
+}
+
+.vc-slot-key {
+  position: absolute;
+  bottom: 3px;
+  right: 5px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--vc-gold);
+  text-shadow: var(--vc-outline-sm);
+  letter-spacing: 0.5px;
+}
+
+/* 6-Star Hero Fame Row (Kid-Friendly Wanted Stars!) */
+.vc-stars-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: -1px;
+}
+
+.vc-fame-label {
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--vc-pink-soft);
+  text-shadow: var(--vc-outline-sm);
+  letter-spacing: 1px;
+  margin-right: 5px;
+  text-transform: uppercase;
+}
+
+.vc-star {
+  font-size: 21px;
+  color: rgba(255, 255, 255, 0.2);
+  text-shadow: var(--vc-outline-sm);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.vc-star.lit {
+  color: var(--vc-gold);
+  text-shadow: -1.5px -1.5px 0 #090512, 1.5px -1.5px 0 #090512, -1.5px 1.5px 0 #090512, 1.5px 1.5px 0 #090512, 0 0 12px rgba(255, 209, 102, 0.85);
+}
+
+.vc-star.pop {
+  transform: scale(1.38);
+}
+
+/* Quick Action Toolbar under Vice City Cluster */
+.quick-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+  margin-top: 4px;
+  pointer-events: auto;
+  max-width: 340px;
+}
+
+.hud-btn {
+  background: rgba(12, 7, 24, 0.84);
+  color: #f1f5f9;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 4px 9px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.hud-btn:hover {
+  background: rgba(255, 73, 168, 0.28);
+  border-color: var(--vc-pink);
+  transform: translateY(-1px);
+}
+
+.hud-btn.missions-btn {
+  background: linear-gradient(135deg, rgba(255, 73, 168, 0.85), rgba(255, 107, 107, 0.85));
+  border-color: #fff;
+  color: #fff;
+  box-shadow: 0 3px 12px rgba(255, 73, 168, 0.45);
+}
+
+.hud-btn.missions-btn:hover {
+  background: linear-gradient(135deg, #ff5eb3, #ff7e7e);
+}
+
+.hud-btn.zip-btn {
+  border-color: var(--vc-mint);
+  color: var(--vc-mint);
+}
+
+/* --- BOTTOM LEFT: Authentic Vice City Circular Radar --- */
+.vc-bottom-left {
+  position: absolute;
+  bottom: 16px;
+  left: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.vc-radar-frame {
+  position: relative;
+  width: 176px;
+  height: 176px;
+  border-radius: 50%;
+  padding: 4px;
+  background: linear-gradient(135deg, var(--vc-pink), var(--vc-cyan));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.72), 0 0 20px rgba(255, 73, 168, 0.3);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+#minimapCanvas {
+  display: block;
+  width: 168px;
+  height: 168px;
+  border-radius: 50%;
+  border: 3px solid #090512;
+  background: #100921;
+}
+
+.vc-controls-mini {
+  background: rgba(9, 5, 18, 0.76);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  padding: 5px 9px;
+  font-size: 10.5px;
+  color: #cbd5e1;
+  line-height: 1.45;
+  max-width: 245px;
+}
+
+.key-pill {
+  display: inline-block;
+  background: rgba(255, 73, 168, 0.22);
+  border: 1px solid rgba(255, 73, 168, 0.65);
+  border-radius: 4px;
+  padding: 0 4px;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700;
+  color: var(--vc-gold);
+  font-size: 10px;
+  letter-spacing: 0.4px;
+}
+
+/* --- BOTTOM CENTER: GTA Subtitles + Vehicle Quick-Spawner Dock --- */
+#dialogueSubtitle {
+  position: absolute;
+  bottom: 94px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(680px, 86vw);
+  text-align: center;
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: var(--vc-outline);
+  background: rgba(9, 5, 18, 0.62);
+  border-radius: 8px;
+  padding: 7px 18px;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+#dialogueSubtitle.active {
+  opacity: 1;
+}
+
+#dialogueSubtitle .sub-speaker {
+  color: var(--vc-gold);
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-right: 6px;
+}
+
+#interactPrompt {
+  position: absolute;
+  bottom: 146px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--vc-pink), #d92682);
+  border: 2px solid #ffffff;
+  padding: 7px 20px;
+  border-radius: 999px;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  box-shadow: 0 6px 22px rgba(255, 73, 168, 0.55);
+  display: none;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.vehicle-dock {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 5px;
+  background: rgba(12, 7, 24, 0.86);
+  backdrop-filter: blur(10px);
+  padding: 6px 10px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(255, 73, 168, 0.42);
+  pointer-events: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  max-width: calc(100vw - 410px);
+  overflow-x: auto;
+}
+
+.dock-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: all 0.14s ease;
+  color: #cbd5e1;
+}
+
+.dock-item:hover {
+  background: rgba(0, 229, 255, 0.16);
+  border-color: var(--vc-cyan);
+  transform: translateY(-2px);
+  color: #fff;
+}
+
+.dock-item.active {
+  background: rgba(255, 73, 168, 0.28);
+  border-color: var(--vc-pink);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(255, 73, 168, 0.45);
+}
+
+.dock-key {
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--vc-gold);
+}
+
+.dock-emoji {
+  font-size: 18px;
+  margin: 1px 0;
+}
+
+.dock-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* --- BOTTOM RIGHT: Iconic Vice City Vehicle/Zone Popups + 80s Digital Speedo --- */
+.vc-bottom-right {
+  position: absolute;
+  bottom: 16px;
+  right: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.vc-toast-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-height: 62px;
+  justify-content: flex-end;
+}
+
+#vcVehicleToast {
+  font-family: 'Oswald', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--vc-mint);
+  text-shadow: var(--vc-outline);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateX(18px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+#vcVehicleToast.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+#vcZoneToast {
+  font-family: 'Pacifico', cursive;
+  font-size: 28px;
+  color: var(--vc-pink-soft);
+  text-shadow: var(--vc-outline);
+  line-height: 1.15;
+  opacity: 0;
+  transform: translateX(18px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+#vcZoneToast.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.speed-box {
+  background: rgba(12, 7, 24, 0.84);
+  border: 1.5px solid rgba(0, 229, 255, 0.45);
+  border-right: 3px solid var(--vc-pink);
+  border-radius: 10px;
+  padding: 8px 14px;
+  text-align: right;
+  min-width: 146px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+}
+
+.speed-num {
+  font-family: 'Oswald', sans-serif;
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 0.95;
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(0, 229, 255, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+
+.speed-unit {
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--vc-cyan);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.speed-veh-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--vc-pink-soft);
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+.nitro-wrap {
+  width: 126px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 6px;
+  margin-left: auto;
+  border: 1px solid #090512;
+}
+
+#nitroFill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--vc-pink), var(--vc-gold), var(--vc-cyan));
+  transition: width 0.08s linear;
+}
+
+/* --- CENTER: Iconic Vice City "MISSION PASSED!" / Stunt Banner --- */
+#stuntBanner {
+  position: absolute;
+  top: 29%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.75);
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.22s ease, transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 20;
+}
+
+#stuntBanner.active {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.stunt-main {
+  font-family: 'Oswald', sans-serif;
+  font-size: 46px;
+  font-weight: 700;
+  color: var(--vc-gold);
+  text-shadow: -3px -3px 0 #090512, 3px -3px 0 #090512, -3px 3px 0 #090512, 3px 3px 0 #090512, 0 8px 28px rgba(0, 0, 0, 0.85);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+#stuntBanner.mission-passed .stunt-main {
+  font-family: 'Pacifico', cursive;
+  font-size: 56px;
+  text-transform: none;
+  color: var(--vc-gold);
+  letter-spacing: 0.5px;
+  text-shadow: -3px -3px 0 #090512, 3px -3px 0 #090512, -3px 3px 0 #090512, 3px 3px 0 #090512, 0 0 28px rgba(255, 73, 168, 0.85);
+}
+
+.stunt-sub {
+  font-family: 'Oswald', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--vc-cyan);
+  text-shadow: var(--vc-outline);
+  letter-spacing: 1.2px;
+  margin-top: 4px;
+}
+
+#stuntBanner.mission-passed .stunt-sub {
+  color: var(--vc-mint);
+  font-size: 26px;
+}
+
+/* ============================================================================
+   VICE CITY MISSION BOARD & PAUSE MODAL (TAB / ESC)
+   ============================================================================ */
+#missionBoardOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top right, rgba(255, 73, 168, 0.25), rgba(9, 5, 18, 0.92) 70%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 18px;
+}
+
+#missionBoardOverlay.open {
+  display: flex;
+}
+
+.vc-board-card {
+  width: min(980px, 96vw);
+  max-height: 92vh;
+  overflow-y: auto;
+  background: linear-gradient(165deg, rgba(24, 12, 46, 0.97), rgba(10, 6, 22, 0.98));
+  border: 2.5px solid var(--vc-pink);
+  border-radius: 18px;
+  padding: 22px 24px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.85), 0 0 40px rgba(255, 73, 168, 0.25);
+}
+
+.vc-board-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 2px solid rgba(255, 73, 168, 0.35);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.vc-board-title {
+  font-family: 'Pacifico', cursive;
+  font-size: 32px;
+  color: var(--vc-pink-soft);
+  text-shadow: var(--vc-outline-sm);
+  line-height: 1.1;
+}
+
+.vc-board-sub {
+  font-family: 'Oswald', sans-serif;
+  font-size: 13px;
+  color: var(--vc-cyan);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.vc-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid var(--vc-cyan);
+  color: #fff;
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  padding: 7px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vc-close-btn:hover {
+  background: var(--vc-cyan);
+  color: var(--vc-ink);
+}
+
+.vc-mission-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.vc-mcard {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  position: relative;
+}
+
+.vc-mcard:hover {
+  transform: translateY(-2px);
+  border-color: var(--vc-cyan);
+  background: rgba(0, 229, 255, 0.07);
+}
+
+.vc-mcard.active-mission {
+  border-color: var(--vc-pink);
+  background: rgba(255, 73, 168, 0.14);
+  box-shadow: 0 0 18px rgba(255, 73, 168, 0.25);
+}
+
+.vc-mcard.passed-mission {
+  border-color: rgba(66, 245, 155, 0.55);
+}
+
+.vc-mcard-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.vc-mcard-giver {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  color: var(--vc-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.vc-mcard-badge {
+  font-family: 'Oswald', sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.vc-mcard-badge.passed {
+  background: rgba(66, 245, 155, 0.2);
+  color: var(--vc-mint);
+  border: 1px solid var(--vc-mint);
+}
+
+.vc-mcard-badge.active {
+  background: rgba(255, 73, 168, 0.28);
+  color: #fff;
+  border: 1px solid var(--vc-pink);
+}
+
+.vc-mcard-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  line-height: 1.15;
+}
+
+.vc-mcard-desc {
+  font-size: 11.5px;
+  color: #cbd5e1;
+  line-height: 1.38;
+  flex: 1;
+}
+
+.vc-mcard-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  color: var(--vc-gold);
+  padding-top: 4px;
+}
+
+.vc-mcard-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.vc-start-m-btn {
+  flex: 1;
+  background: linear-gradient(135deg, var(--vc-pink), #e62e8a);
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+.vc-start-m-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.12);
+}
+
+.vc-district-strip {
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  padding-top: 14px;
+}
+
+.vc-strip-label {
+  font-family: 'Oswald', sans-serif;
+  font-size: 12.5px;
+  color: var(--vc-gold);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.vc-district-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.vc-dist-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(0, 229, 255, 0.35);
+  color: #f1f5f9;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.vc-dist-btn:hover {
+  background: var(--vc-cyan);
+  color: var(--vc-ink);
+}
+
+/* ============================================================================
+   VICE CITY TITLE & HOMETOWN ZIP CUSTOMIZER MODAL
+   ============================================================================ */
+#titleOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 20%, rgba(255, 73, 168, 0.32) 0%, rgba(12, 7, 24, 0.9) 70%);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  padding: 14px;
+}
+
+.title-box {
+  max-width: 760px;
+  width: 96%;
+  max-height: 94vh;
+  overflow-y: auto;
+  background: linear-gradient(165deg, rgba(24, 11, 46, 0.96), rgba(10, 6, 22, 0.98));
+  border: 3px solid var(--vc-pink);
+  border-radius: 22px;
+  padding: 24px 28px 26px;
+  text-align: center;
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.85), 0 0 50px rgba(255, 73, 168, 0.3);
+  position: relative;
+}
+
+.vc-logo-wrap {
+  margin-bottom: 12px;
+}
+
+.vc-logo-kicker {
+  display: inline-block;
+  font-family: 'Oswald', sans-serif;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  color: var(--vc-ink);
+  background: linear-gradient(90deg, var(--vc-cyan), var(--vc-mint));
+  padding: 3px 14px;
+  border-radius: 999px;
+  margin-bottom: 6px;
+}
+
+.title-h1 {
+  font-family: 'Oswald', sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #ffffff;
+  text-shadow: -3px -3px 0 #090512, 3px -3px 0 #090512, -3px 3px 0 #090512, 3px 3px 0 #090512, 0 6px 24px rgba(0, 229, 255, 0.4);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.title-script {
+  font-family: 'Pacifico', cursive;
+  font-size: 32px;
+  color: var(--vc-pink-soft);
+  text-shadow: var(--vc-outline-sm), 0 0 20px rgba(255, 73, 168, 0.7);
+  margin-top: -6px;
+  margin-bottom: 4px;
+}
+
+.title-sub {
+  font-size: 14px;
+  color: var(--vc-gold);
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+/* ZIP Code Customizer Box */
+.zip-customizer {
+  background: rgba(9, 5, 18, 0.85);
+  border: 2px solid var(--vc-cyan);
+  border-radius: 14px;
+  padding: 13px 16px;
+  margin-bottom: 14px;
+  text-align: left;
+}
+
+.zip-header {
+  font-family: 'Oswald', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--vc-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.zip-input-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#zipInput {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 2px;
+  outline: none;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+#zipInput:focus {
+  border-color: var(--vc-pink);
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.zip-load-btn {
+  background: linear-gradient(135deg, var(--vc-cyan), #0284c7);
+  color: #090512;
+  border: none;
+  border-radius: 10px;
+  padding: 0 18px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  transition: transform 0.14s ease, filter 0.14s ease;
+}
+
+.zip-load-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+.zip-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.preset-chip {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #f1f5f9;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.preset-chip:hover {
+  background: rgba(255, 73, 168, 0.24);
+  border-color: var(--vc-pink);
+  color: #fff;
+}
+
+#zipLoadStatus {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--vc-mint);
+  margin-top: 7px;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 9px;
+  text-align: left;
+  margin-bottom: 16px;
+}
+
+.feat-item {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 73, 168, 0.26);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 12px;
+  color: #e2e8f0;
+  line-height: 1.38;
+}
+
+.feat-item strong {
+  color: var(--vc-pink-soft);
+  display: block;
+  font-family: 'Oswald', sans-serif;
+  font-size: 13.5px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.play-btn {
+  background: linear-gradient(135deg, var(--vc-pink), #ff6b6b);
+  color: #fff;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  padding: 13px 42px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(255, 73, 168, 0.55);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.play-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 14px 38px rgba(255, 73, 168, 0.78);
+}
+
+/* ============================================================================
+   MOBILE / TABLET TOUCH CONTROLS
+   ============================================================================ */
+#touchControls {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 25;
+  display: none;
+}
+
+body.touch-enabled #touchControls {
+  display: block;
+}
+
+.touch-left-pad {
+  position: absolute;
+  bottom: 84px;
+  left: 14px;
+  display: flex;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.touch-right-pad {
+  position: absolute;
+  bottom: 84px;
+  right: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, 68px);
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.t-btn {
+  width: 68px;
+  height: 68px;
+  border-radius: 18px;
+  background: rgba(12, 7, 24, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 2.5px solid rgba(255, 73, 168, 0.55);
+  color: #fff;
+  font-weight: 900;
+  font-size: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+  touch-action: none;
+  cursor: pointer;
+  transition: transform 0.08s ease, background 0.08s ease;
+}
+
+.t-btn span {
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #e2e8f0;
+  margin-top: 2px;
+}
+
+.t-btn.pressed {
+  transform: scale(0.92);
+  background: rgba(0, 229, 255, 0.55);
+  border-color: var(--vc-gold);
+}
+
+.t-btn.gas-btn {
+  background: rgba(22, 163, 74, 0.82);
+  border-color: var(--vc-mint);
+}
+
+.t-btn.brake-btn {
+  background: rgba(225, 29, 72, 0.8);
+  border-color: var(--vc-pink-soft);
+}
+
+.t-btn.nitro-btn {
+  background: rgba(234, 88, 12, 0.84);
+  border-color: var(--vc-gold);
+}
+
+.t-btn.action-btn {
+  background: rgba(2, 132, 199, 0.84);
+  border-color: var(--vc-cyan);
+}
+
+@keyframes vcPulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.06); }
+}
+
+@media (pointer: coarse), (max-width: 900px) {
+  #touchControls { display: block; }
+  .vc-controls-mini { display: none; }
+  .vc-bottom-left {
+    bottom: 165px;
+    left: 10px;
+    transform: scale(0.74);
+    transform-origin: bottom left;
+  }
+  .vc-bottom-right {
+    bottom: 232px;
+    right: 12px;
+    transform: scale(0.8);
+    transform-origin: bottom right;
+  }
+}
+
+@media (max-width: 820px) {
+  .feature-grid { grid-template-columns: 1fr; }
+  .title-h1 { font-size: 32px; }
+  .title-script { font-size: 24px; }
+  .title-box { padding: 18px 16px; }
+  .vc-top-left {
+    top: 8px;
+    left: 8px;
+    width: 240px;
+    transform: scale(0.84);
+    transform-origin: top left;
+  }
+  .vc-mission-desc { display: none; }
+  .vc-top-right {
+    top: 8px;
+    right: 8px;
+    transform: scale(0.8);
+    transform-origin: top right;
+  }
+  .vehicle-dock {
+    bottom: 8px;
+    max-width: 96vw;
+    padding: 4px 7px;
+  }
+  .dock-item {
+    min-width: 46px;
+    padding: 4px 5px;
+  }
+}

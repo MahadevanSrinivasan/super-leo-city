@@ -3,775 +3,137 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Super Leo City 3D — Custom ZIP Code OpenStreetMap & Stunt Sandbox</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      user-select: none;
-      -webkit-user-select: none;
-    }
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #070d19;
-      font-family: 'Segoe UI', 'Fredoka', system-ui, -apple-system, sans-serif;
-      color: #fff;
-    }
-    #gameCanvas {
-      display: block;
-      width: 100vw;
-      height: 100vh;
-    }
-
-    /* HUD OVERLAY */
-    #hud {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 10;
-    }
-
-    /* Top Left: Score, Hometown ZIP Badge, Vehicle Card */
-    .hud-top-left {
-      position: absolute;
-      top: 14px;
-      left: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .glass-card {
-      background: rgba(11, 22, 44, 0.84);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 2px solid rgba(255, 255, 255, 0.18);
-      border-radius: 16px;
-      padding: 10px 16px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-    }
-    .brand-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .badge-3d {
-      background: linear-gradient(135deg, #ff9f1c, #ffbf69);
-      color: #111;
-      font-weight: 900;
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 8px;
-      letter-spacing: 0.8px;
-      text-transform: uppercase;
-    }
-    .score-val {
-      font-size: 24px;
-      font-weight: 900;
-      color: #ffd166;
-      text-shadow: 0 2px 8px rgba(255, 209, 102, 0.45);
-      letter-spacing: 0.5px;
-    }
-    .stars-val {
-      font-size: 14px;
-      font-weight: 800;
-      color: #72efdd;
-    }
-    .zip-status-card {
-      border-left: 4px solid #4ade80;
-      pointer-events: auto;
-      cursor: pointer;
-      transition: transform 0.15s ease;
-    }
-    .zip-status-card:hover {
-      transform: translateY(-1px);
-      border-color: #22c55e;
-    }
-    .zip-city {
-      font-size: 14px;
-      font-weight: 900;
-      color: #4ade80;
-    }
-    .zip-meta {
-      font-size: 11.5px;
-      font-weight: 700;
-      color: #cbd5e1;
-      margin-top: 2px;
-    }
-    .vehicle-pill {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      border-left: 4px solid #38bdf8;
-    }
-    .veh-icon {
-      font-size: 24px;
-    }
-    .veh-name {
-      font-size: 15px;
-      font-weight: 900;
-      color: #fff;
-    }
-    .veh-sub {
-      font-size: 11.5px;
-      color: #94a3b8;
-      font-weight: 600;
-    }
-
-    /* Top Center: Active Hero Mission + 3D Target Arrow */
-    .hud-top-center {
-      position: absolute;
-      top: 14px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      min-width: 340px;
-      max-width: 88vw;
-    }
-    .mission-card {
-      border-color: rgba(250, 204, 21, 0.55);
-      text-align: center;
-      padding: 9px 20px;
-      width: 100%;
-    }
-    .mission-tag {
-      font-size: 11px;
-      font-weight: 900;
-      letter-spacing: 1.4px;
-      color: #facc15;
-      text-transform: uppercase;
-    }
-    .mission-title {
-      font-size: 16px;
-      font-weight: 900;
-      color: #fff;
-      margin: 2px 0;
-    }
-    .mission-desc {
-      font-size: 12.5px;
-      color: #bae6fd;
-      font-weight: 600;
-    }
-    .compass-wrap {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(15, 23, 42, 0.85);
-      padding: 4px 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(250, 204, 21, 0.4);
-      font-size: 12.5px;
-      font-weight: 800;
-      color: #fde047;
-    }
-    #compassArrow {
-      display: inline-block;
-      font-size: 17px;
-      transition: transform 0.08s linear;
-    }
-
-    /* Top Right: Mini-Map + Quick Action Buttons */
-    .hud-top-right {
-      position: absolute;
-      top: 14px;
-      right: 16px;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 8px;
-    }
-    #minimapCanvas {
-      width: 172px;
-      height: 172px;
-      border-radius: 50%;
-      border: 3px solid rgba(56, 189, 248, 0.7);
-      background: rgba(10, 24, 48, 0.85);
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
-    }
-    .quick-toggles {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: 6px;
-      pointer-events: auto;
-    }
-    .hud-btn {
-      background: rgba(15, 23, 42, 0.88);
-      color: #e2e8f0;
-      border: 1.5px solid rgba(255, 255, 255, 0.22);
-      border-radius: 10px;
-      padding: 6px 11px;
-      font-size: 11.5px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-    .hud-btn:hover {
-      background: rgba(56, 189, 248, 0.28);
-      border-color: #38bdf8;
-      transform: translateY(-1px);
-    }
-    .hud-btn.zip-btn {
-      border-color: #4ade80;
-      color: #4ade80;
-    }
-
-    /* Center Stunt / Goal / Mission Banner */
-    #stuntBanner {
-      position: absolute;
-      top: 28%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(0.8);
-      text-align: center;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    #stuntBanner.active {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
-    }
-    .stunt-main {
-      font-size: 38px;
-      font-weight: 900;
-      color: #fde047;
-      text-shadow: 0 4px 0 #b45309, 0 8px 24px rgba(0,0,0,0.75);
-      letter-spacing: 1px;
-    }
-    .stunt-sub {
-      font-size: 19px;
-      font-weight: 800;
-      color: #38bdf8;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-    }
-
-    /* Prompt near vehicle */
-    #interactPrompt {
-      position: absolute;
-      bottom: 138px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      border: 2px solid #93c5fd;
-      padding: 8px 20px;
-      border-radius: 999px;
-      font-weight: 900;
-      font-size: 15px;
-      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.55);
-      display: none;
-      pointer-events: auto;
-      cursor: pointer;
-    }
-
-    /* Bottom Right: 3D Speedometer & Nitro Gauge */
-    .hud-bottom-right {
-      position: absolute;
-      bottom: 16px;
-      right: 16px;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 8px;
-    }
-    .speed-box {
-      text-align: right;
-      min-width: 150px;
-    }
-    .speed-num {
-      font-size: 40px;
-      font-weight: 900;
-      line-height: 1;
-      color: #fff;
-      font-variant-numeric: tabular-nums;
-    }
-    .speed-unit {
-      font-size: 12px;
-      font-weight: 800;
-      color: #38bdf8;
-      letter-spacing: 1px;
-    }
-    .nitro-wrap {
-      width: 136px;
-      height: 10px;
-      background: rgba(255,255,255,0.14);
-      border-radius: 999px;
-      overflow: hidden;
-      margin-top: 7px;
-      border: 1px solid rgba(255,255,255,0.25);
-    }
-    #nitroFill {
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, #f97316, #facc15, #38bdf8);
-      transition: width 0.08s linear;
-    }
-
-    /* Bottom Center: Instant Vehicle Spawn / Switcher Dock */
-    .vehicle-dock {
-      position: absolute;
-      bottom: 14px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 6px;
-      background: rgba(11, 22, 44, 0.85);
-      backdrop-filter: blur(10px);
-      padding: 7px 11px;
-      border-radius: 18px;
-      border: 1.5px solid rgba(255, 255, 255, 0.18);
-      pointer-events: auto;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      max-width: 95vw;
-      overflow-x: auto;
-    }
-    .dock-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-width: 56px;
-      padding: 5px 7px;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1.5px solid transparent;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      color: #cbd5e1;
-    }
-    .dock-item:hover {
-      background: rgba(56, 189, 248, 0.2);
-      border-color: rgba(56, 189, 248, 0.6);
-      transform: translateY(-3px);
-      color: #fff;
-    }
-    .dock-item.active {
-      background: rgba(56, 189, 248, 0.3);
-      border-color: #38bdf8;
-      color: #fff;
-      box-shadow: 0 0 14px rgba(56, 189, 248, 0.4);
-    }
-    .dock-key {
-      font-size: 10px;
-      font-weight: 900;
-      color: #facc15;
-    }
-    .dock-emoji {
-      font-size: 19px;
-      margin: 1px 0;
-    }
-    .dock-label {
-      font-size: 10px;
-      font-weight: 800;
-      white-space: nowrap;
-    }
-
-    /* Bottom Left: Controls Legend */
-    .hud-bottom-left {
-      position: absolute;
-      bottom: 94px;
-      left: 16px;
-      font-size: 11px;
-      line-height: 1.52;
-      color: #cbd5e1;
-      padding: 9px 13px;
-    }
-    .key-pill {
-      display: inline-block;
-      background: rgba(255,255,255,0.16);
-      border: 1px solid rgba(255,255,255,0.3);
-      border-radius: 5px;
-      padding: 0 5px;
-      font-weight: 800;
-      color: #fde047;
-      font-size: 10.5px;
-    }
-
-    /* Title & ZIP Customizer Overlay Modal */
-    #titleOverlay {
-      position: fixed;
-      inset: 0;
-      z-index: 40;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: radial-gradient(circle at center, rgba(15, 23, 42, 0.45) 0%, rgba(7, 13, 25, 0.88) 100%);
-      backdrop-filter: blur(4px);
-    }
-    .title-box {
-      max-width: 720px;
-      width: 94%;
-      background: linear-gradient(160deg, rgba(15, 28, 58, 0.96), rgba(9, 16, 34, 0.98));
-      border: 3px solid #38bdf8;
-      border-radius: 26px;
-      padding: 26px 28px;
-      text-align: center;
-      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.75), 0 0 40px rgba(56, 189, 248, 0.3);
-    }
-    .title-badge {
-      display: inline-block;
-      background: linear-gradient(90deg, #f59e0b, #ef4444);
-      padding: 4px 14px;
-      border-radius: 999px;
-      font-size: 11.5px;
-      font-weight: 900;
-      letter-spacing: 1.4px;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-    }
-    .title-h1 {
-      font-size: 42px;
-      font-weight: 900;
-      letter-spacing: -0.5px;
-      background: linear-gradient(180deg, #ffffff 0%, #93c5fd 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 4px;
-    }
-    .title-sub {
-      font-size: 15.5px;
-      color: #fde047;
-      font-weight: 700;
-      margin-bottom: 16px;
-    }
-
-    /* ZIP Code Customizer Box */
-    .zip-customizer {
-      background: rgba(15, 23, 42, 0.9);
-      border: 2px solid #4ade80;
-      border-radius: 18px;
-      padding: 14px 18px;
-      margin-bottom: 16px;
-      text-align: left;
-    }
-    .zip-header {
-      font-size: 13px;
-      font-weight: 900;
-      color: #4ade80;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      margin-bottom: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .zip-input-row {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-    #zipInput {
-      flex: 1;
-      background: rgba(255, 255, 255, 0.1);
-      border: 2px solid rgba(255, 255, 255, 0.28);
-      border-radius: 12px;
-      padding: 10px 14px;
-      font-size: 18px;
-      font-weight: 900;
-      color: #fff;
-      letter-spacing: 1.5px;
-      outline: none;
-      user-select: text;
-      -webkit-user-select: text;
-    }
-    #zipInput:focus {
-      border-color: #38bdf8;
-      background: rgba(255, 255, 255, 0.15);
-    }
-    .zip-load-btn {
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      padding: 0 20px;
-      font-size: 14px;
-      font-weight: 900;
-      cursor: pointer;
-      transition: transform 0.15s ease;
-    }
-    .zip-load-btn:hover {
-      transform: translateY(-1px);
-      background: linear-gradient(135deg, #60a5fa, #3b82f6);
-    }
-    .zip-presets {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      align-items: center;
-    }
-    .preset-chip {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #e2e8f0;
-      border-radius: 999px;
-      padding: 4px 10px;
-      font-size: 11.5px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-    .preset-chip:hover {
-      background: rgba(74, 222, 128, 0.22);
-      border-color: #4ade80;
-      color: #fff;
-    }
-    #zipLoadStatus {
-      font-size: 12px;
-      font-weight: 800;
-      color: #fde047;
-      margin-top: 6px;
-    }
-
-    .feature-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      text-align: left;
-      margin-bottom: 18px;
-    }
-    .feat-item {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 12px;
-      padding: 9px 12px;
-      font-size: 12px;
-      color: #e2e8f0;
-    }
-    .feat-item strong {
-      color: #38bdf8;
-      display: block;
-      font-size: 13px;
-      margin-bottom: 2px;
-    }
-    .play-btn {
-      background: linear-gradient(135deg, #22c55e, #16a34a);
-      color: #fff;
-      border: none;
-      border-radius: 999px;
-      padding: 14px 42px;
-      font-size: 20px;
-      font-weight: 900;
-      cursor: pointer;
-      box-shadow: 0 10px 30px rgba(34, 197, 94, 0.5);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
-    .play-btn:hover {
-      transform: translateY(-2px) scale(1.03);
-      box-shadow: 0 14px 36px rgba(34, 197, 94, 0.7);
-    }
-
-    /* Mobile Touch Controls Overlay */
-    #touchControls {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 25;
-      display: none;
-    }
-    body.touch-enabled #touchControls {
-      display: block;
-    }
-    .touch-left-pad {
-      position: absolute;
-      bottom: 84px;
-      left: 14px;
-      display: flex;
-      gap: 10px;
-      pointer-events: auto;
-    }
-    .touch-right-pad {
-      position: absolute;
-      bottom: 84px;
-      right: 14px;
-      display: grid;
-      grid-template-columns: repeat(2, 68px);
-      gap: 10px;
-      pointer-events: auto;
-    }
-    .t-btn {
-      width: 68px;
-      height: 68px;
-      border-radius: 20px;
-      background: rgba(15, 23, 42, 0.78);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      border: 2.5px solid rgba(255, 255, 255, 0.35);
-      color: #fff;
-      font-weight: 900;
-      font-size: 22px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
-      touch-action: none;
-      cursor: pointer;
-      transition: transform 0.08s ease, background 0.08s ease;
-    }
-    .t-btn span {
-      font-size: 10px;
-      font-weight: 900;
-      letter-spacing: 0.5px;
-      color: #cbd5e1;
-      margin-top: 2px;
-    }
-    .t-btn.pressed {
-      transform: scale(0.92);
-      background: rgba(56, 189, 248, 0.55);
-      border-color: #fde047;
-    }
-    .t-btn.gas-btn {
-      background: rgba(22, 163, 74, 0.82);
-      border-color: #86efac;
-    }
-    .t-btn.brake-btn {
-      background: rgba(220, 38, 38, 0.78);
-      border-color: #fca5a5;
-    }
-    .t-btn.nitro-btn {
-      background: rgba(234, 88, 12, 0.82);
-      border-color: #fde047;
-    }
-    .t-btn.action-btn {
-      background: rgba(37, 99, 235, 0.82);
-      border-color: #93c5fd;
-    }
-
-    @media (pointer: coarse), (max-width: 900px) {
-      #touchControls { display: block; }
-      .hud-bottom-left { display: none; }
-      .hud-bottom-right {
-        bottom: 240px;
-        right: 12px;
-        transform: scale(0.82);
-        transform-origin: bottom right;
-      }
-    }
-
-    @media (max-width: 820px) {
-      .feature-grid { grid-template-columns: 1fr; }
-      .title-h1 { font-size: 28px; }
-      .title-box { padding: 18px 16px; max-height: 94vh; overflow-y: auto; }
-      .hud-top-left {
-        top: 8px;
-        left: 8px;
-        transform: scale(0.82);
-        transform-origin: top left;
-      }
-      .hud-top-center {
-        top: 8px;
-        min-width: 210px;
-        max-width: 52vw;
-        transform: translateX(-50%) scale(0.82);
-        transform-origin: top center;
-      }
-      .mission-desc { display: none; }
-      #minimapCanvas {
-        width: 108px;
-        height: 108px;
-      }
-      .hud-top-right {
-        top: 8px;
-        right: 8px;
-        transform: scale(0.85);
-        transform-origin: top right;
-      }
-      .vehicle-dock {
-        bottom: 8px;
-        padding: 5px 8px;
-        gap: 4px;
-      }
-      .dock-item {
-        min-width: 48px;
-        padding: 4px 5px;
-      }
-    }
-  </style>
+  <meta name="description" content="Super Leo City: Vice Edition — A kid-friendly 3D open-world driving, rescue, and stunt sandbox inspired by GTA: Vice City with zero violence, custom hometown ZIP maps, and multi-step hero missions." />
+  <title>Super Leo City: Vice Edition — Kid-Friendly 3D Open-World Hero Sandbox</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <canvas id="gameCanvas"></canvas>
 
   <div id="hud">
-    <!-- Top Left -->
-    <div class="hud-top-left">
-      <div class="glass-card">
-        <div class="brand-row">
-          <span class="badge-3d">3D OSM + TERRAIN</span>
-          <span style="font-weight:900;font-size:13px;color:#93c5fd;">SUPER LEO CITY</span>
+    <!-- TOP LEFT: Classic GTA Pager / Multi-Step Mission Objective Box -->
+    <div class="vc-top-left">
+      <div class="vc-pager-box" id="missionBriefBox">
+        <div class="vc-pager-head">
+          <div class="vc-giver-row">
+            <span class="vc-mission-code" id="missionCode">F</span>
+            <span class="vc-mission-tag" id="missionTag">CHIEF BLAZE • HERO MISSION</span>
+          </div>
+          <span class="vc-mission-timer" id="missionTimer">01:30</span>
         </div>
-        <div class="score-val" id="scoreVal">0 PTS</div>
-        <div class="stars-val" id="starsVal">⭐ 0 HERO BADGES</div>
+        <div class="vc-mission-title" id="missionTitle">Triple Fire Rescue!</div>
+        <div class="vc-mission-desc" id="missionDesc">Spray all 3 fizzy BBQ blazes with the Fire Engine [3] Water Cannon [Z]!</div>
+        <div class="vc-mission-progress-row">
+          <div class="vc-prog-track">
+            <div class="vc-prog-fill" id="missionProgFill"></div>
+          </div>
+          <span class="vc-prog-label" id="missionProgLabel">0 / 3</span>
+        </div>
+        <div class="vc-pager-footer">
+          <div class="vc-compass-inline">
+            <span id="compassArrow">⬆️</span>
+            <span id="compassDist">140m to Objective</span>
+          </div>
+          <button class="vc-rec-ride-btn" id="btnSummonRecRide" title="Summon Recommended Mission Ride">🚒 Ride [3]</button>
+        </div>
       </div>
 
-      <div class="glass-card zip-status-card" id="zipHudCard" title="Click to Customize ZIP Code!">
-        <div class="zip-city" id="hudZipCity">📍 Mountain View, CA (94040)</div>
-        <div class="zip-meta" id="hudZipMeta">⛰️ Elev: 32m • ☀️ 68°F • Coastal Bay</div>
-      </div>
-
-      <div class="glass-card vehicle-pill" id="vehicleCard">
-        <div class="veh-icon" id="vehIcon">🏎️</div>
+      <div class="vc-zip-pill" id="zipHudCard" title="Click to Customize Hometown ZIP Code (P)">
         <div>
-          <div class="veh-name" id="vehName">Comet GT Supercar</div>
-          <div class="veh-sub" id="vehSub">SPACE: Nitro Flame • Z: Horn</div>
+          <div class="zip-city" id="hudZipCity">📍 Mountain View, CA (94040)</div>
+          <div class="zip-meta" id="hudZipMeta">⛰️ Elev: 32m • ☀️ 68°F • Coastal Bay</div>
         </div>
       </div>
     </div>
 
-    <!-- Top Center: Mission & 3D Compass -->
-    <div class="hud-top-center">
-      <div class="glass-card mission-card">
-        <div class="mission-tag" id="missionTag">🌟 HOMETOWN HERO MISSION</div>
-        <div class="mission-title" id="missionTitle">Fire Rescue at Central Avenue!</div>
-        <div class="mission-desc" id="missionDesc">Drive to the golden beacon or press [3] for Fire Engine!</div>
-      </div>
-      <div class="compass-wrap">
-        <span id="compassArrow">⬆️</span>
-        <span id="compassDist">140m to Objective</span>
+    <!-- TOP CENTER: Vice City Neon Radio Station Tuner -->
+    <div class="vc-top-center">
+      <div id="radioBanner" title="Click or press [R] to switch radio station">
+        <span class="radio-wave">📻</span>
+        <div>
+          <div class="radio-station-name" id="radioStationName">Sunny FM</div>
+          <div class="radio-station-sub" id="radioStationSub">80s Kid Synth-Pop • Press [R]</div>
+        </div>
       </div>
     </div>
 
-    <!-- Top Right: 3D Radar & Camera/Time/ZIP Toggles -->
-    <div class="hud-top-right">
-      <canvas id="minimapCanvas" width="172" height="172"></canvas>
+    <!-- TOP RIGHT: Authentic Vice City Clock, Cash, Bars, Gadget Slot & 6 Hero Stars -->
+    <div class="vc-top-right">
+      <div class="vc-hud-cluster">
+        <div class="vc-vitals-col">
+          <div class="vc-clock" id="vcClock">16:20</div>
+          <div class="vc-cash" id="scoreVal">$00000000</div>
+          <div class="vc-bars-stack">
+            <div class="vc-bar-row" title="Turbo Boost">
+              <span class="vc-bar-ico">⚡</span>
+              <div class="vc-bar-track"><div class="vc-bar-fill turbo" id="vcTurboBar"></div></div>
+            </div>
+            <div class="vc-bar-row" title="Hero Hype Meter">
+              <span class="vc-bar-ico">⭐</span>
+              <div class="vc-bar-track"><div class="vc-bar-fill hype" id="vcHypeBar"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="vc-gadget-slot" id="vcGadgetSlot" title="Tap or press [Z] for Vehicle Action!">
+          <span class="vc-slot-emoji" id="vehIcon">🏎️</span>
+          <span class="vc-slot-key" id="vcSlotKey">[Z] ACT</span>
+        </div>
+      </div>
+
+      <div class="vc-stars-row" id="heroStarsRow" title="Hero Fame Stars — Complete Missions & Stunts!">
+        <span class="vc-fame-label" id="starsVal">HERO FAME</span>
+        <span class="vc-star" data-star="1">★</span>
+        <span class="vc-star" data-star="2">★</span>
+        <span class="vc-star" data-star="3">★</span>
+        <span class="vc-star" data-star="4">★</span>
+        <span class="vc-star" data-star="5">★</span>
+        <span class="vc-star" data-star="6">★</span>
+      </div>
+
       <div class="quick-toggles">
+        <button class="hud-btn missions-btn" id="btnMissions" title="Open Vice City Mission Board (TAB / ESC)">📋 Missions (TAB)</button>
         <button class="hud-btn zip-btn" id="btnZip" title="Change Hometown ZIP Code (P)">📍 ZIP (P)</button>
-        <button class="hud-btn" id="btnDistrict" title="Fast-Travel to World District (G)">🗺️ Zone: Downtown (G)</button>
-        <button class="hud-btn" id="btnCam" title="Switch Camera View (C)">🎥 Cam (C)</button>
-        <button class="hud-btn" id="btnTime" title="Switch Time of Day (T)">☀️ Day (T)</button>
+        <button class="hud-btn" id="btnDistrict" title="Fast-Travel to World District (G)">🗺️ Downtown (G)</button>
+        <button class="hud-btn" id="btnRadio" title="Switch Radio Station (R)">📻 Radio (R)</button>
+        <button class="hud-btn" id="btnCam" title="Switch Camera View (C)">🎥 Chase (C)</button>
+        <button class="hud-btn" id="btnTime" title="Switch Time of Day (T)">🌴 Vice Sunset (T)</button>
         <button class="hud-btn" id="btnMute" title="Toggle Sound (M)">🔊</button>
       </div>
     </div>
 
-    <!-- Stunt / Goal Banner -->
+    <!-- CENTER: Iconic Vice City "Mission Passed!" / Stunt Bonus Overlay -->
     <div id="stuntBanner">
-      <div class="stunt-main" id="stuntMain">MEGA ROOFTOP AIR!</div>
-      <div class="stunt-sub" id="stuntSub">+500 STUNT BONUS</div>
+      <div class="stunt-main" id="stuntMain">Mission Passed!</div>
+      <div class="stunt-sub" id="stuntSub">+$1,500 • HERO FAME +</div>
     </div>
 
-    <!-- Enter/Exit Vehicle Prompt -->
-    <div id="interactPrompt">Press [E] or [ENTER] to Hop In!</div>
-
-    <!-- Bottom Left Controls -->
-    <div class="hud-bottom-left glass-card">
-      <div><span class="key-pill">W A S D</span> / <span class="key-pill">ARROWS</span> Drive, Steer &amp; Drift</div>
-      <div><span class="key-pill">SPACE</span> Nitro Boost / Helicopter Climb / Handbrake</div>
-      <div><span class="key-pill">Z</span> or <span class="key-pill">F</span> Vehicle Action (Water Cannon / Pizza / Roar / Descend)</div>
-      <div><span class="key-pill">E</span> / <span class="key-pill">ENTER</span> Exit &amp; Walk as Leo • <span class="key-pill">P</span> Change ZIP Code</div>
-      <div><span class="key-pill">1 - 9</span> Instant Vehicle Drop • <span class="key-pill">C</span> Camera • <span class="key-pill">T</span> Day/Sunset/Night</div>
+    <!-- BOTTOM LEFT: Iconic Vice City Circular Radar & Compact Key Legend -->
+    <div class="vc-bottom-left">
+      <div class="vc-radar-frame" id="radarFrame" title="Click to open Mission Board & District Map (TAB)">
+        <canvas id="minimapCanvas" width="168" height="168"></canvas>
+      </div>
+      <div class="vc-controls-mini">
+        <div><span class="key-pill">WASD</span> Drive &bull; <span class="key-pill">SPACE</span> Turbo/Climb &bull; <span class="key-pill">Z</span> Action</div>
+        <div><span class="key-pill">E</span> Hop In/Out &bull; <span class="key-pill">1-9</span> Rides &bull; <span class="key-pill">R</span> Radio &bull; <span class="key-pill">TAB</span> Missions</div>
+      </div>
     </div>
 
-    <!-- Bottom Center Vehicle Quick-Spawner Dock -->
+    <!-- BOTTOM CENTER: GTA Subtitles, Enter Prompt & Vehicle Switcher Dock -->
+    <div id="interactPrompt">Press [E] or Tap to Hop In!</div>
+    <div id="dialogueSubtitle"></div>
     <div class="vehicle-dock" id="vehicleDock"></div>
 
-    <!-- Bottom Right Speedometer -->
-    <div class="hud-bottom-right">
-      <div class="glass-card speed-box">
+    <!-- BOTTOM RIGHT: Iconic Vice City Vehicle/Zone Popups + 80s Speedometer -->
+    <div class="vc-bottom-right">
+      <div class="vc-toast-stack">
+        <div id="vcVehicleToast">COMET GT SUPERCAR</div>
+        <div id="vcZoneToast">Downtown</div>
+      </div>
+      <div class="speed-box">
         <div class="speed-num" id="speedVal">0</div>
-        <div class="speed-unit" id="speedUnit">MPH • TURBO READY</div>
+        <div class="speed-unit" id="speedUnit">MPH &bull; TURBO READY</div>
+        <div class="speed-veh-name" id="vehName">Comet GT Supercar</div>
         <div class="nitro-wrap">
           <div id="nitroFill"></div>
         </div>
@@ -794,30 +156,53 @@
     </div>
   </div>
 
-  <!-- Title & ZIP Code Customizer Modal -->
+  <!-- VICE CITY MISSION BOARD & DISTRICT MAP OVERLAY (TAB / ESC) -->
+  <div id="missionBoardOverlay">
+    <div class="vc-board-card">
+      <div class="vc-board-header">
+        <div>
+          <div class="vc-board-title">Hero Mission Board</div>
+          <div class="vc-board-sub" id="boardStatsSub">0 / 8 MISSIONS PASSED &bull; PICK ANY KID-FRIENDLY ADVENTURE</div>
+        </div>
+        <button class="vc-close-btn" id="closeBoardBtn">✕ RESUME CRUISE (TAB)</button>
+      </div>
+
+      <div class="vc-mission-grid" id="missionBoardGrid"></div>
+
+      <div class="vc-district-strip">
+        <div class="vc-strip-label">🌴 Fast-Travel Across All 6 Districts</div>
+        <div class="vc-district-btns" id="boardDistrictBtns"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VICE CITY TITLE & HOMETOWN ZIP CUSTOMIZER MODAL -->
   <div id="titleOverlay">
     <div class="title-box">
-      <div class="title-badge">3D OPENSTREETMAP + REAL TERRAIN SANDBOX</div>
-      <div class="title-h1">SUPER LEO CITY 3D</div>
-      <div class="title-sub">Drive Your Own Hometown ZIP Code in 3D with Real Streets, Terrain &amp; Weather!</div>
+      <div class="vc-logo-wrap">
+        <div class="vc-logo-kicker">🌴 100% Kid-Friendly Open-World 3D Sandbox</div>
+        <h1 class="title-h1">SUPER LEO CITY</h1>
+        <div class="title-script">Vice Edition</div>
+        <div class="title-sub">80s Neon Vibes, 8 Multi-Step Hero Missions, Kids Radio &amp; Your Real Hometown ZIP in 3D!</div>
+      </div>
 
       <!-- Hometown ZIP Code Builder -->
       <div class="zip-customizer">
         <div class="zip-header">
-          <span>🌍 Customize Hometown ZIP Code (Live OpenStreetMap + Elevation Terrain)</span>
-          <span id="zipBiomeBadge" style="color:#38bdf8;">Coastal Bay Biome</span>
+          <span>🌍 Customize Hometown ZIP Code (Live OpenStreetMap + Terrain)</span>
+          <span id="zipBiomeBadge" style="color:var(--vc-pink-soft);">Coastal Bay Biome</span>
         </div>
         <div class="zip-input-row">
-          <input type="text" id="zipInput" maxlength="10" placeholder="Enter 5-digit US ZIP (e.g. 94040)" value="94040" />
+          <input type="text" id="zipInput" maxlength="10" placeholder="Enter 5-digit US ZIP (e.g. 33139)" value="94040" />
           <button class="zip-load-btn" id="loadZipBtn">🗺️ BUILD 3D TOWN</button>
         </div>
         <div class="zip-presets">
           <span style="font-size:11px;color:#94a3b8;font-weight:800;">Try Famous ZIPs:</span>
-          <button class="preset-chip" data-zip="94040">🌴 94040 Mountain View, CA</button>
+          <button class="preset-chip" data-zip="33139">🌴 33139 Miami Vice Beach</button>
+          <button class="preset-chip" data-zip="94040">☀️ 94040 Mountain View, CA</button>
           <button class="preset-chip" data-zip="10036">🗽 10036 NYC Times Sq</button>
           <button class="preset-chip" data-zip="81611">🏔️ 81611 Aspen Snow</button>
           <button class="preset-chip" data-zip="86336">🌵 86336 Sedona Red Rocks</button>
-          <button class="preset-chip" data-zip="33139">🏖️ 33139 Miami Beach</button>
           <button class="preset-chip" data-zip="98101">🌲 98101 Seattle, WA</button>
         </div>
         <div id="zipLoadStatus">✅ Ready: Mountain View, CA (94040) — Real streets, elevation terrain &amp; weather loaded!</div>
@@ -825,23 +210,23 @@
 
       <div class="feature-grid">
         <div class="feat-item">
-          <strong>🗺️ Real OpenStreetMap Streets &amp; Buildings</strong>
-          Fetches real streets, parks, schools &amp; building footprints from your ZIP code with 3D green street signs!
+          <strong>🌟 8 Kid-Friendly Hero Missions</strong>
+          Extinguish 3-stop BBQ blazes, deliver timed hot pizzas, catch runaway Robo-Pups, serve ice cream &amp; roar as a T-Rex!
         </div>
         <div class="feat-item">
-          <strong>⛰️ Real Elevation Terrain &amp; Regional Biomes</strong>
-          Sculpts 3D hills, Snowy Rockies, Red Rock Canyons, or Palm Beaches + live local weather (Snow, Rain, Sun)!
+          <strong>📻 Vice City HUD, Radar &amp; Kids Radio</strong>
+          Circular radar with mission letter blips, 6-Star Hero Fame meter, Mission Board (TAB), and 4 synth-pop radio stations (R)!
         </div>
         <div class="feat-item">
           <strong>🏎️ 9 Detailed 3D Rides + T-Rex</strong>
-          Drive the Comet GT Supercar, Fire Engine (Water Cannon), Monster Truck, Helicopter, Speedboat &amp; Dino!
+          Drive the Comet GT Supercar, Fire Engine (Water Cannon), Patrol Interceptor, Monster Truck, Helicopter, Speedboat &amp; Dino!
         </div>
         <div class="feat-item">
-          <strong>⚽ 3D Car-Soccer &amp; Hometown Missions</strong>
-          Rescue cats and deliver pizzas to real parks &amp; streets in your town, or score goals in the 3D Stadium!
+          <strong>🗺️ Real Hometown Streets &amp; Soccer</strong>
+          Type any US ZIP code to build real streets, hills &amp; weather — or score goals in the 3D Car-Soccer Stadium!
         </div>
       </div>
-      <button class="play-btn" id="startBtn">▶ DRIVE IN MY 3D HOMETOWN</button>
+      <button class="play-btn" id="startBtn">▶ CRUISE SUPER LEO CITY</button>
     </div>
   </div>
 

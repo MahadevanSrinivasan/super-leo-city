@@ -6,13 +6,59 @@
 (() => {
   'use strict';
 
-  // --- AUDIO SYNTHESIZER (Web Audio API) ---
+  // --- AUDIO SYNTHESIZER & VICE CITY KIDS RADIO (Web Audio API) ---
+  const RADIO_STATIONS = [
+    {
+      name: 'Sunny FM',
+      sub: '80s Kid Synth-Pop',
+      bpm: 118,
+      type: 'triangle',
+      notes: [261.63, 329.63, 392.0, 523.25, 440.0, 392.0, 329.63, 293.66],
+      bass: [130.81, 130.81, 174.61, 196.0]
+    },
+    {
+      name: 'Ocean Wave 103',
+      sub: 'Miami Beach Synthwave',
+      bpm: 104,
+      type: 'sine',
+      notes: [220.0, 261.63, 329.63, 392.0, 329.63, 293.66, 261.63, 246.94],
+      bass: [110.0, 110.0, 146.83, 164.81]
+    },
+    {
+      name: 'Dino Funk 105',
+      sub: 'Bouncy T-Rex Groove',
+      bpm: 112,
+      type: 'square',
+      notes: [196.0, 246.94, 293.66, 392.0, 329.63, 293.66, 246.94, 220.0],
+      bass: [98.0, 110.0, 130.81, 146.83]
+    },
+    {
+      name: 'Stunt Rock',
+      sub: 'Turbo Ramp Anthems',
+      bpm: 132,
+      type: 'sawtooth',
+      notes: [329.63, 329.63, 392.0, 440.0, 493.88, 440.0, 392.0, 329.63],
+      bass: [164.81, 164.81, 196.0, 220.0]
+    },
+    {
+      name: 'Radio Off',
+      sub: 'City Ambience Only',
+      bpm: 0,
+      type: 'sine',
+      notes: [],
+      bass: []
+    }
+  ];
+
   class SoundEngine {
     constructor() {
       this.ctx = null;
       this.muted = false;
       this.sirenTimer = 0;
       this.jingleStep = 0;
+      this.radioIdx = 0;
+      this.radioTimer = 0;
+      this.radioStep = 0;
     }
     init() {
       if (!this.ctx) {
@@ -44,6 +90,10 @@
     playSplash() { this.tone(320, 0.09, 'sine', 0.08, 120); }
     playJump() { this.tone(240, 0.3, 'triangle', 0.15, 620); }
     playRoar() { this.tone(95, 0.45, 'sawtooth', 0.22, 48); }
+    playCheckpoint() {
+      this.tone(587.33, 0.11, 'triangle', 0.15);
+      setTimeout(() => this.tone(880, 0.18, 'triangle', 0.16), 80);
+    }
     playHorn() {
       this.tone(440, 0.15, 'square', 0.1, 440);
       setTimeout(() => this.tone(554, 0.22, 'square', 0.1, 554), 90);
@@ -52,7 +102,38 @@
       const notes = [523.25, 659.25, 783.99, 1046.5];
       notes.forEach((n, i) => setTimeout(() => this.tone(n, 0.22, 'triangle', 0.18), i * 95));
     }
+    playMissionPassed() {
+      // Classic 80s Vice City neon-synth victory arpeggio
+      const melody = [392.0, 493.88, 587.33, 783.99, 987.77];
+      melody.forEach((n, i) => {
+        setTimeout(() => {
+          this.tone(n, 0.28, 'triangle', 0.16);
+          this.tone(n * 0.5, 0.32, 'sine', 0.1);
+        }, i * 105);
+      });
+    }
+    playRadioTune() {
+      this.tone(1200, 0.04, 'sawtooth', 0.05, 600);
+      setTimeout(() => this.tone(880, 0.06, 'sine', 0.06), 45);
+    }
     playSmash() { this.tone(190, 0.09, 'square', 0.08, 70); }
+    updateRadio(dt, inVehicle) {
+      if (this.muted || !this.ctx || !inVehicle) return;
+      const st = RADIO_STATIONS[this.radioIdx];
+      if (!st || !st.bpm || st.notes.length === 0) return;
+      const stepDur = 60 / st.bpm / 2; // eighth notes
+      this.radioTimer += dt;
+      if (this.radioTimer >= stepDur) {
+        this.radioTimer -= stepDur;
+        const note = st.notes[this.radioStep % st.notes.length];
+        this.tone(note, stepDur * 0.85, st.type, 0.026);
+        if (this.radioStep % 2 === 0) {
+          const bassNote = st.bass[Math.floor(this.radioStep / 2) % st.bass.length];
+          this.tone(bassNote, stepDur * 1.6, 'sine', 0.032);
+        }
+        this.radioStep = (this.radioStep + 1) % 64;
+      }
+    }
     updateSpecialAudio(dt, vehType, speed) {
       if (this.muted || !this.ctx) return;
       this.sirenTimer += dt;
@@ -420,17 +501,17 @@
   renderer.toneMappingExposure = 1.1;
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x38bdf8);
-  scene.fog = new THREE.FogExp2(0x7dd3fc, 0.00055);
+  scene.background = new THREE.Color(0xff82b2);
+  scene.fog = new THREE.FogExp2(0xffb3c6, 0.00052);
 
   const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.5, 2600);
   camera.position.set(0, 12, -25);
 
-  // --- LIGHTING (DAY / SUNSET / NEON NIGHT) ---
-  const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x1e293b, 0.82);
+  // --- LIGHTING (VICE SUNSET / SUNNY DAY / GOLDEN HOUR / NEON NIGHT) ---
+  const hemiLight = new THREE.HemisphereLight(0xffd6e7, 0x2a1b4e, 0.85);
   scene.add(hemiLight);
 
-  const sunLight = new THREE.DirectionalLight(0xfffbeb, 1.35);
+  const sunLight = new THREE.DirectionalLight(0xffe8b6, 1.35);
   sunLight.position.set(220, 360, 180);
   sunLight.castShadow = true;
   sunLight.shadow.mapSize.width = 2048;
@@ -447,9 +528,10 @@
 
   let timeMode = 0;
   const TIME_PRESETS = [
-    { name: '☀️ Day (T)', bg: 0x38bdf8, fog: 0x7dd3fc, hemi: 0.82, sun: 1.35, sunCol: 0xfffbeb, exposure: 1.1 },
-    { name: '🌅 Sunset (T)', bg: 0xf97316, fog: 0xfb923c, hemi: 0.65, sun: 1.15, sunCol: 0xfde047, exposure: 1.05 },
-    { name: '🌙 Night (T)', bg: 0x090d16, fog: 0x0f172a, hemi: 0.34, sun: 0.28, sunCol: 0x60a5fa, exposure: 0.95 }
+    { name: '🌴 Vice Sunset (T)', bg: 0xff82b2, fog: 0xffb3c6, hemi: 0.85, sun: 1.35, sunCol: 0xffe8b6, exposure: 1.12 },
+    { name: '☀️ Sunny Day (T)', bg: 0x38bdf8, fog: 0x7dd3fc, hemi: 0.84, sun: 1.35, sunCol: 0xfffbeb, exposure: 1.1 },
+    { name: '🌅 Golden Hour (T)', bg: 0xf97316, fog: 0xfb923c, hemi: 0.68, sun: 1.18, sunCol: 0xfde047, exposure: 1.06 },
+    { name: '🌙 Neon Night (T)', bg: 0x0b081a, fog: 0x1a1033, hemi: 0.4, sun: 0.34, sunCol: 0x67e8f9, exposure: 0.98 }
   ];
 
   // --- WORLD STATE & COLLIDERS ---
@@ -1803,87 +1885,564 @@
     aiCars.push({ group: g, x: rx + (dir > 0 ? 6.5 : -6.5), z: rz, dir, speed: 28 + (i % 5) * 6 });
   }
 
-  // --- DYNAMIC HOMETOWN HERO MISSIONS ACROSS ALL 6 DISTRICTS ---
+  // --- VICE CITY MULTI-STEP KID-FRIENDLY HERO MISSIONS (8 ADVENTURES) ---
   let MISSIONS = [];
   let missionIdx = 0;
+  let completedMissionIds = new Set();
+  let activeObjectives = [];
+  let missionTimeLeft = 0;
+  let missionBoardOpen = false;
+  let vcGameMinutes = 16 * 60 + 20; // Starts at 16:20 Vice Sunset!
+  let heroHype = 25;
+  let lastDetectedDistrictId = 'downtown';
+
+  const missionPropsGroup = new THREE.Group();
+  scene.add(missionPropsGroup);
 
   const beaconGroup = new THREE.Group();
   const beaconCylinder = new THREE.Mesh(
-    new THREE.CylinderGeometry(7, 7, 75, 24, 1, true),
-    new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.28, side: THREE.DoubleSide })
+    new THREE.CylinderGeometry(6.8, 6.8, 72, 24, 1, true),
+    new THREE.MeshBasicMaterial({ color: 0xff49a8, transparent: true, opacity: 0.26, side: THREE.DoubleSide })
   );
-  beaconCylinder.position.y = 37.5;
-  const beaconRing = new THREE.Mesh(new THREE.TorusGeometry(7.5, 0.55, 12, 32), new THREE.MeshBasicMaterial({ color: 0xfde047 }));
+  beaconCylinder.position.y = 36;
+  const beaconRing = new THREE.Mesh(
+    new THREE.TorusGeometry(7.6, 0.6, 12, 32),
+    new THREE.MeshBasicMaterial({ color: 0xffd166 })
+  );
   beaconRing.rotation.x = Math.PI / 2;
-  beaconRing.position.y = 0.6;
-
-  const fireGroup = new THREE.Group();
-  for (let i = 0; i < 5; i++) {
-    const fCone = new THREE.Mesh(
-      new THREE.ConeGeometry(1.8, 5.5, 8),
-      new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0xef4444 : 0xf97316 })
-    );
-    fCone.position.set((Math.random() - 0.5) * 4, 2.7, (Math.random() - 0.5) * 4);
-    fireGroup.add(fCone);
-  }
-  beaconGroup.add(beaconCylinder, beaconRing, fireGroup);
+  beaconRing.position.y = 0.7;
+  beaconGroup.add(beaconCylinder, beaconRing);
   scene.add(beaconGroup);
 
+  function clearMissionProps() {
+    while (missionPropsGroup.children.length > 0) {
+      missionPropsGroup.remove(missionPropsGroup.children[0]);
+    }
+  }
+
+  function createObjectiveMesh(obj, missionType) {
+    const g = new THREE.Group();
+    const ringColor =
+      missionType === 'fire' ? 0xff6b35 :
+      missionType === 'delivery' ? 0xffd166 :
+      missionType === 'icecream' ? 0xff49a8 :
+      missionType === 'robopup' ? 0x00e5ff :
+      missionType === 'roar' ? 0x42f59b : 0xff49a8;
+
+    const padRing = new THREE.Mesh(
+      new THREE.TorusGeometry(6.8, 0.52, 10, 28),
+      new THREE.MeshBasicMaterial({ color: ringColor })
+    );
+    padRing.rotation.x = Math.PI / 2;
+    padRing.position.y = 0.55;
+    g.add(padRing);
+
+    const beam = new THREE.Mesh(
+      new THREE.CylinderGeometry(5.5, 5.5, 42, 18, 1, true),
+      new THREE.MeshBasicMaterial({ color: ringColor, transparent: true, opacity: 0.18, side: THREE.DoubleSide })
+    );
+    beam.position.y = 21;
+    g.add(beam);
+
+    if (missionType === 'fire') {
+      const flames = new THREE.Group();
+      for (let i = 0; i < 6; i++) {
+        const fCone = new THREE.Mesh(
+          new THREE.ConeGeometry(1.7, 5.6 + (i % 2) * 1.6, 8),
+          new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0xef4444 : 0xf97316 })
+        );
+        fCone.position.set(Math.cos(i * 1.1) * 2.4, 2.8, Math.sin(i * 1.1) * 2.4);
+        flames.add(fCone);
+      }
+      g.add(flames);
+      g.userData.animPart = flames;
+    } else if (missionType === 'delivery') {
+      const pizzaDisc = new THREE.Mesh(
+        new THREE.CylinderGeometry(3.2, 3.2, 0.55, 16),
+        new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.45 })
+      );
+      const crust = new THREE.Mesh(
+        new THREE.TorusGeometry(3.2, 0.35, 8, 20),
+        new THREE.MeshStandardMaterial({ color: 0xd97706 })
+      );
+      crust.rotation.x = Math.PI / 2;
+      const pizzaWrap = new THREE.Group();
+      pizzaWrap.add(pizzaDisc, crust);
+      pizzaWrap.position.y = 4.6;
+      pizzaWrap.rotation.z = 0.25;
+      g.add(pizzaWrap);
+      g.userData.animPart = pizzaWrap;
+    } else if (missionType === 'icecream') {
+      const partyGroup = new THREE.Group();
+      const colors = [0xff49a8, 0x00e5ff, 0xffd166, 0x42f59b];
+      for (let i = 0; i < 4; i++) {
+        const balloon = new THREE.Mesh(
+          new THREE.SphereGeometry(1.15, 12, 12),
+          new THREE.MeshStandardMaterial({ color: colors[i], roughness: 0.3 })
+        );
+        balloon.position.set(Math.cos(i * 1.57) * 2.4, 5.4 + (i % 2) * 1.2, Math.sin(i * 1.57) * 2.4);
+        partyGroup.add(balloon);
+      }
+      g.add(partyGroup);
+      g.userData.animPart = partyGroup;
+    } else if (missionType === 'robopup') {
+      const pup = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(2.6, 1.8, 4.0),
+        new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: 0x0077aa, emissiveIntensity: 0.5 })
+      );
+      body.position.y = 2.0;
+      const head = new THREE.Mesh(
+        new THREE.BoxGeometry(2.0, 1.7, 1.9),
+        new THREE.MeshStandardMaterial({ color: 0xffffff })
+      );
+      head.position.set(0, 3.1, 2.0);
+      const earL = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1.1, 0.5), new THREE.MeshBasicMaterial({ color: 0xff49a8 }));
+      earL.position.set(-0.85, 4.1, 1.9);
+      const earR = earL.clone();
+      earR.position.x = 0.85;
+      const tail = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.3, 0.4), new THREE.MeshBasicMaterial({ color: 0xffd166 }));
+      tail.position.set(0, 3.0, -2.1);
+      tail.rotation.x = -0.4;
+      pup.add(body, head, earL, earR, tail);
+      g.add(pup);
+      g.userData.animPart = pup;
+    } else if (missionType === 'checkpoint' || missionType === 'roar') {
+      const arch = new THREE.Mesh(
+        new THREE.TorusGeometry(6.8, 0.65, 12, 28),
+        new THREE.MeshBasicMaterial({ color: missionType === 'roar' ? 0x42f59b : 0x00e5ff })
+      );
+      arch.position.y = 7.4;
+      g.add(arch);
+      g.userData.animPart = arch;
+    }
+
+    const baseY = obj.y !== undefined ? obj.y : Math.max(0, getTerrainHeightAt(obj.x, obj.z));
+    g.position.set(obj.x, baseY, obj.z);
+    return g;
+  }
+
   function rebuildHometownMissions() {
-    const st0 = hometown.streets[0] || 'Main St';
+    const st0 = hometown.streets[0] || 'Ocean Blvd';
+    const st1 = hometown.streets[1] || 'Palm Avenue';
     const lm0 = hometown.landmarks[0] || `${hometown.city} Park`;
 
     MISSIONS = [
       {
-        title: `🔥 Fire Rescue on ${st0}!`,
-        desc: `Drive to ${st0} or spray the blaze with Fire Engine [3] Water Cannon [Z]!`,
-        x: -220,
-        z: -20,
-        type: 'fire'
+        id: 'fire_rescue',
+        code: 'F',
+        codeColor: '#ff595e',
+        giver: 'Chief Blaze',
+        title: `Triple BBQ Fire Rescue`,
+        desc: `Spray all 3 fizzy backyard blazes on ${st0} & Downtown with Fire Engine [3] Water Cannon [Z]!`,
+        dialogue: `"Three backyard BBQs got super fizzy on ${st0}, Leo! Hop in the Fire Engine [3] and spray 'em down with [Z]!"`,
+        recommendedVeh: 2,
+        reward: 1800,
+        difficulty: 1,
+        districtId: 'downtown',
+        type: 'fire',
+        timeLimit: 0,
+        objectives: [
+          { x: -165, z: -20, label: `${st0} Blaze` },
+          { x: 165, z: -140, label: `${st1} Blaze` },
+          { x: -70, z: 185, label: `${lm0} Blaze` }
+        ]
       },
       {
-        title: `✈️ Stunt Airport Jumbo-Jet Jump!`,
-        desc: `Drive East on the Expressway (or press [G] for Airport) and jump over the parked Jumbo Jet!`,
-        x: 920,
-        z: 120,
-        type: 'airport'
+        id: 'pizza_rush',
+        code: 'P',
+        codeColor: '#ffca3a',
+        giver: 'Chef Mario',
+        title: `Hot Pizza Express`,
+        desc: `Deliver 3 hot pizzas across Downtown & Resort Island before the timer runs out! Drive in or launch [Z]!`,
+        dialogue: `"Mamma mia! Three picnic parties ordered extra-cheesy pizzas! Grab the Rocket Pizza Buggy [6] and zoom!"`,
+        recommendedVeh: 5,
+        reward: 2000,
+        difficulty: 2,
+        districtId: 'downtown',
+        type: 'delivery',
+        timeLimit: 110,
+        objectives: [
+          { x: 180, z: 120, label: 'East Plaza Picnic' },
+          { x: -195, z: 150, label: 'Sunset Park Picnic' },
+          { x: 0, z: 760, label: 'Resort Island Pier' }
+        ]
       },
       {
-        title: `🏔️ Summit Overlook Expedition (${hometown.city} Peaks)!`,
-        desc: `Drive North up the Mountain Highway (or press [G]) to the +38m Summit Ski-Jump!`,
-        x: 0,
-        z: -980,
-        y: 38,
-        type: 'summit'
+        id: 'icecream_party',
+        code: 'I',
+        codeColor: '#ff49a8',
+        giver: 'Sunny Scoops',
+        title: `Beach Ice Cream Party`,
+        desc: `Serve 4 cheering kid parties on Resort Island & Downtown with Ice Cream Van [5] cones [Z]!`,
+        dialogue: `"It's sunny out, Leo! Ring the jingle in the Ice Cream Van [5] and toss rainbow cones [Z] to all 4 beach parties!"`,
+        recommendedVeh: 4,
+        reward: 2000,
+        difficulty: 1,
+        districtId: 'island',
+        type: 'icecream',
+        timeLimit: 0,
+        objectives: [
+          { x: -65, z: 810, label: 'West Boardwalk Kids' },
+          { x: 75, z: 840, label: 'Ferris Wheel Party' },
+          { x: 0, z: 920, label: 'Marina Beach Crowd' },
+          { x: 0, z: 540, label: 'Causeway Overlook' }
+        ]
       },
       {
-        title: `🍕 Hot Pizza Rush to Starlight Resort Island!`,
-        desc: `Blast South across the Ocean Causeway to the Ferris Wheel near ${lm0}!`,
-        x: 0,
-        z: 850,
-        type: 'delivery'
+        id: 'robopup_chase',
+        code: 'C',
+        codeColor: '#00e5ff',
+        giver: 'Officer Spark',
+        title: `Runaway Robo-Pups!`,
+        desc: `3 playful toy Robo-Pups are zooming around Downtown! Catch all 3 in your Patrol Interceptor [2]!`,
+        dialogue: `"The toy shop's Robo-Pups escaped for a game of tag! Hop in the Patrol Cruiser [2] and tag all 3!"`,
+        recommendedVeh: 1,
+        reward: 2200,
+        difficulty: 2,
+        districtId: 'downtown',
+        type: 'robopup',
+        timeLimit: 0,
+        objectives: [
+          { x: 110, z: -70, cx: 110, cz: -70, r: 58, angle: 0, spd: 0.75, label: 'Sparky Pup' },
+          { x: -120, z: 75, cx: -120, cz: 75, r: 64, angle: 2.1, spd: -0.68, label: 'Bolt Pup' },
+          { x: 15, z: -220, cx: 15, cz: -220, r: 54, angle: 4.2, spd: 0.82, label: 'Turbo Pup' }
+        ]
       },
       {
-        title: `🦖 Dino Canyon Rally Checkpoint!`,
-        desc: `Race West to Dino Safari Canyon (or press [G]) and roar through the Red Rock Archways!`,
-        x: -920,
-        z: 0,
-        type: 'canyon'
+        id: 'airport_stunt',
+        code: 'A',
+        codeColor: '#38bdf8',
+        giver: 'Captain Sky',
+        title: `Airport Stunt Show`,
+        desc: `Blast through 3 neon stunt rings down the Stunt Airport runway and soar over the Jumbo Jet!`,
+        dialogue: `"Welcome to Stunt Airport! Hit full turbo [SPACE] in the Comet GT [1] and fly through all 3 runway rings!"`,
+        recommendedVeh: 0,
+        reward: 2200,
+        difficulty: 2,
+        districtId: 'airport',
+        type: 'checkpoint',
+        timeLimit: 0,
+        objectives: [
+          { x: 920, z: 270, label: 'Runway Gate 1' },
+          { x: 920, z: 120, label: 'Jumbo Jet Ramp' },
+          { x: 920, z: -90, label: 'Hangar Finish Ring' }
+        ]
+      },
+      {
+        id: 'summit_expedition',
+        code: 'M',
+        codeColor: '#a78bfa',
+        giver: 'Ranger Peak',
+        title: `Summit Rescue Run`,
+        desc: `Climb the Mountain Highway through 3 checkpoints to the +38m Summit Ski-Jump!`,
+        dialogue: `"Check the mountain beacons for us, Leo! Monster Crush 4x4 [4] or Sky-Hawk Heli [7] will crush this climb!"`,
+        recommendedVeh: 3,
+        reward: 2400,
+        difficulty: 2,
+        districtId: 'mountain',
+        type: 'checkpoint',
+        timeLimit: 0,
+        objectives: [
+          { x: 0, z: -690, label: 'Foothills Gate' },
+          { x: 0, z: -840, label: 'Alpine Switchback' },
+          { x: 0, z: -980, y: 38, label: 'Summit Overlook (+38m)' }
+        ]
+      },
+      {
+        id: 'dino_canyon',
+        code: 'D',
+        codeColor: '#42f59b',
+        giver: 'Dr. Dino',
+        title: `Dino Canyon Roar Rally`,
+        desc: `Race through 2 Red Rock Canyon arches and press [Z] to T-Rex Mega Roar at the Dino Nest!`,
+        dialogue: `"Time to wake up the sleepy baby dinos! Ride Emerald Rex [9] through the canyon arches and ROAR [Z] at the nest!"`,
+        recommendedVeh: 8,
+        reward: 2500,
+        difficulty: 2,
+        districtId: 'canyon',
+        type: 'roar',
+        timeLimit: 0,
+        objectives: [
+          { x: -820, z: 120, label: 'Red Rock Arch 1' },
+          { x: -910, z: 30, label: 'Red Rock Arch 2' },
+          { x: -940, z: -80, needsRoar: true, label: 'Dino Nest (Press [Z] to Roar!)' }
+        ]
+      },
+      {
+        id: 'soccer_cup',
+        code: 'S',
+        codeColor: '#f59e0b',
+        giver: 'Coach Leo',
+        title: `Stadium Cup Hat-Trick`,
+        desc: `Drive to the 3D Car-Soccer Arena and score 2 goals to lift the Super Leo Cup!`,
+        dialogue: `"The stadium crowd is chanting your name! Push the giant soccer ball into either goal twice to win the trophy!"`,
+        recommendedVeh: 0,
+        reward: 2500,
+        difficulty: 3,
+        districtId: 'stadium',
+        type: 'soccer',
+        timeLimit: 0,
+        objectives: [
+          { x: 55, z: 42, label: 'Score Goal #1' },
+          { x: 55, z: 42, label: 'Score Goal #2' }
+        ]
       }
     ];
     missionIdx = missionIdx % MISSIONS.length;
+    loadActiveMission(missionIdx, false);
+  }
+
+  function loadActiveMission(index, announce = true) {
+    missionIdx = ((index % MISSIONS.length) + MISSIONS.length) % MISSIONS.length;
+    const m = MISSIONS[missionIdx];
+    clearMissionProps();
+    missionTimeLeft = m.timeLimit || 0;
+
+    activeObjectives = m.objectives.map(o => {
+      const clone = Object.assign({}, o, { done: false });
+      if (m.type !== 'soccer') {
+        clone.mesh = createObjectiveMesh(clone, m.type);
+        missionPropsGroup.add(clone.mesh);
+      }
+      return clone;
+    });
+
     syncMissionUI();
+    if (announce && gameStarted) {
+      showDialogueSubtitle(m.giver, m.dialogue);
+    }
+    if (missionBoardOpen) renderMissionBoard();
+  }
+
+  function getNextActiveObjective() {
+    for (let i = 0; i < activeObjectives.length; i++) {
+      if (!activeObjectives[i].done) return activeObjectives[i];
+    }
+    return activeObjectives[0] || { x: 0, z: 0, y: 0 };
   }
 
   function syncMissionUI() {
     const m = MISSIONS[missionIdx];
-    document.getElementById('missionTag').textContent = `🌟 ${hometown.city.toUpperCase()} (${hometown.zip}) HERO MISSION`;
-    document.getElementById('missionTitle').textContent = m.title;
-    document.getElementById('missionDesc').textContent = m.desc;
-    beaconGroup.position.set(m.x, m.y || 0, m.z);
-    fireGroup.visible = m.type === 'fire';
+    if (!m) return;
+    const doneCount = activeObjectives.filter(o => o.done).length;
+    const totalCount = Math.max(1, activeObjectives.length);
+    const pct = Math.round((doneCount / totalCount) * 100);
+
+    const codeEl = document.getElementById('missionCode');
+    if (codeEl) {
+      codeEl.textContent = m.code;
+      codeEl.style.background = m.codeColor;
+    }
+    const tagEl = document.getElementById('missionTag');
+    if (tagEl) tagEl.textContent = `${m.giver.toUpperCase()} • ${hometown.city.toUpperCase()}`;
+    const titleEl = document.getElementById('missionTitle');
+    if (titleEl) titleEl.textContent = m.title;
+    const descEl = document.getElementById('missionDesc');
+    const nextObj = getNextActiveObjective();
+    if (descEl) {
+      descEl.textContent = nextObj && nextObj.label
+        ? `${m.desc} (Next: ${nextObj.label})`
+        : m.desc;
+    }
+    const progFill = document.getElementById('missionProgFill');
+    if (progFill) progFill.style.width = `${pct}%`;
+    const progLabel = document.getElementById('missionProgLabel');
+    if (progLabel) progLabel.textContent = `${doneCount} / ${totalCount}`;
+
+    const recSpec = VEHICLE_CATALOG[m.recommendedVeh] || VEHICLE_CATALOG[0];
+    const recBtn = document.getElementById('btnSummonRecRide');
+    if (recBtn) {
+      recBtn.textContent = `${recSpec.emoji} Ride [${recSpec.key}]`;
+      recBtn.title = `Summon ${recSpec.name}`;
+    }
+
+    const timerEl = document.getElementById('missionTimer');
+    if (timerEl) {
+      if (m.timeLimit > 0) {
+        const secs = Math.max(0, Math.ceil(missionTimeLeft));
+        const mm = String(Math.floor(secs / 60)).padStart(2, '0');
+        const ss = String(secs % 60).padStart(2, '0');
+        timerEl.textContent = `${mm}:${ss}`;
+        timerEl.classList.add('active');
+        timerEl.classList.toggle('urgent', secs <= 15);
+      } else {
+        timerEl.classList.remove('active', 'urgent');
+      }
+    }
+
+    if (nextObj) {
+      const bY = nextObj.y !== undefined ? nextObj.y : Math.max(0, getTerrainHeightAt(nextObj.x, nextObj.z));
+      beaconGroup.position.set(nextObj.x, bY, nextObj.z);
+      beaconGroup.visible = true;
+    }
   }
-  rebuildHometownMissions();
+
+  function advanceMissionObjective(objIdx, customToast) {
+    const obj = activeObjectives[objIdx];
+    if (!obj || obj.done) return;
+    obj.done = true;
+    if (obj.mesh) {
+      missionPropsGroup.remove(obj.mesh);
+      obj.mesh = null;
+    }
+
+    const m = MISSIONS[missionIdx];
+    if (m.timeLimit > 0) missionTimeLeft += 15; // Kid-friendly time bonus!
+
+    addScore(350);
+    heroHype = Math.min(100, heroHype + 22);
+    spawnConfetti(obj.x, (obj.y || 0) + 3, obj.z);
+
+    const remaining = activeObjectives.filter(o => !o.done).length;
+    if (remaining === 0) {
+      completeCurrentMission();
+    } else {
+      sfx.playCheckpoint();
+      const doneCount = activeObjectives.length - remaining;
+      showStuntBanner(customToast || `${obj.label.toUpperCase()} DONE!`, `${doneCount} / ${activeObjectives.length} COMPLETE • +$350`, false);
+      syncMissionUI();
+    }
+  }
+
+  // --- VICE CITY HUD & TOAST CONTROLLERS ---
+  let subtitleTimer = null;
+  function showDialogueSubtitle(speaker, text) {
+    const el = document.getElementById('dialogueSubtitle');
+    if (!el) return;
+    el.innerHTML = `<span class="sub-speaker">${speaker}:</span>${text}`;
+    el.classList.add('active');
+    if (subtitleTimer) clearTimeout(subtitleTimer);
+    subtitleTimer = setTimeout(() => el.classList.remove('active'), 4800);
+  }
+
+  let vehToastTimer = null;
+  function showVehicleToast(name) {
+    const el = document.getElementById('vcVehicleToast');
+    if (!el) return;
+    el.textContent = name.toUpperCase();
+    el.classList.add('show');
+    if (vehToastTimer) clearTimeout(vehToastTimer);
+    vehToastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+  }
+
+  let zoneToastTimer = null;
+  function showZoneToast(name) {
+    const el = document.getElementById('vcZoneToast');
+    if (!el) return;
+    el.textContent = name.replace(/^[^\w]+\s*/, '');
+    el.classList.add('show');
+    if (zoneToastTimer) clearTimeout(zoneToastTimer);
+    zoneToastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+  }
+
+  let radioToastTimer = null;
+  function cycleRadioStation(silent = false) {
+    sfx.init();
+    sfx.radioIdx = (sfx.radioIdx + 1) % RADIO_STATIONS.length;
+    sfx.radioStep = 0;
+    const st = RADIO_STATIONS[sfx.radioIdx];
+    if (!silent) sfx.playRadioTune();
+    const banner = document.getElementById('radioBanner');
+    const nameEl = document.getElementById('radioStationName');
+    const subEl = document.getElementById('radioStationSub');
+    const btn = document.getElementById('btnRadio');
+    if (nameEl) nameEl.textContent = st.name;
+    if (subEl) subEl.textContent = `${st.sub} • Press [R]`;
+    if (btn) btn.textContent = st.bpm ? `📻 ${st.name} (R)` : '🔇 Radio Off (R)';
+    if (banner) {
+      banner.classList.add('visible');
+      if (radioToastTimer) clearTimeout(radioToastTimer);
+      radioToastTimer = setTimeout(() => banner.classList.remove('visible'), 3200);
+    }
+  }
+
+  function updateHeroStars(animatePop = false) {
+    const litCount = Math.min(6, stars);
+    const starEls = document.querySelectorAll('#heroStarsRow .vc-star');
+    starEls.forEach((el, idx) => {
+      const isLit = idx < litCount;
+      el.classList.toggle('lit', isLit);
+      if (animatePop && idx === litCount - 1) {
+        el.classList.add('pop');
+        setTimeout(() => el.classList.remove('pop'), 350);
+      }
+    });
+  }
+
+  function renderMissionBoard() {
+    const grid = document.getElementById('missionBoardGrid');
+    const statsSub = document.getElementById('boardStatsSub');
+    if (!grid) return;
+
+    if (statsSub) {
+      statsSub.textContent = `${completedMissionIds.size} / ${MISSIONS.length} MISSIONS PASSED • HERO CASH $${score.toLocaleString()} • PICK ANY ADVENTURE`;
+    }
+
+    grid.innerHTML = '';
+    MISSIONS.forEach((m, idx) => {
+      const isPassed = completedMissionIds.has(m.id);
+      const isActive = idx === missionIdx;
+      const recSpec = VEHICLE_CATALOG[m.recommendedVeh] || VEHICLE_CATALOG[0];
+      const diffStars = '★'.repeat(m.difficulty) + '☆'.repeat(3 - m.difficulty);
+
+      const card = document.createElement('div');
+      card.className = 'vc-mcard' + (isActive ? ' active-mission' : '') + (isPassed ? ' passed-mission' : '');
+      card.innerHTML = `
+        <div class="vc-mcard-top">
+          <div class="vc-mcard-giver">
+            <span class="vc-mission-code" style="background:${m.codeColor}">${m.code}</span>
+            <span>${m.giver}</span>
+          </div>
+          ${isPassed ? '<span class="vc-mcard-badge passed">PASSED</span>' : isActive ? '<span class="vc-mcard-badge active">ACTIVE</span>' : ''}
+        </div>
+        <div class="vc-mcard-title">${m.title}</div>
+        <div class="vc-mcard-desc">${m.desc}</div>
+        <div class="vc-mcard-meta">
+          <span>${recSpec.emoji} ${recSpec.name.split(' ')[0]}</span>
+          <span>${diffStars} &bull; +$${m.reward.toLocaleString()}</span>
+        </div>
+        <div class="vc-mcard-actions">
+          <button class="vc-start-m-btn" data-m-idx="${idx}">▶ PLAY MISSION</button>
+        </div>
+      `;
+      card.querySelector('.vc-start-m-btn').addEventListener('click', () => {
+        sfx.init();
+        toggleMissionBoard(false);
+        const distIdx = WORLD_DISTRICTS.findIndex(d => d.id === m.districtId);
+        if (distIdx >= 0) {
+          teleportToDistrict(distIdx, false);
+        }
+        summonAndBoardVehicle(m.recommendedVeh, false);
+        loadActiveMission(idx, true);
+        sfx.playCheckpoint();
+      });
+      grid.appendChild(card);
+    });
+
+    const distWrap = document.getElementById('boardDistrictBtns');
+    if (distWrap) {
+      distWrap.innerHTML = '';
+      WORLD_DISTRICTS.forEach((d, idx) => {
+        const b = document.createElement('button');
+        b.className = 'vc-dist-btn';
+        b.textContent = d.name;
+        b.addEventListener('click', () => {
+          toggleMissionBoard(false);
+          teleportToDistrict(idx, true);
+        });
+        distWrap.appendChild(b);
+      });
+    }
+  }
+
+  function toggleMissionBoard(forceState) {
+    if (!gameStarted) return;
+    missionBoardOpen = typeof forceState === 'boolean' ? forceState : !missionBoardOpen;
+    const overlay = document.getElementById('missionBoardOverlay');
+    if (overlay) overlay.classList.toggle('open', missionBoardOpen);
+    if (missionBoardOpen) renderMissionBoard();
+  }
 
   // --- PLAYER STATE & CONTROLS ---
   const leo = createLeoCharacter();
@@ -1893,7 +2452,9 @@
   let stars = 0;
   let nitro = 100;
   let cameraMode = 0;
-  const CAM_NAMES = ['🎥 Cam: Chase (C)', '🎥 Cam: Close (C)', '🎥 Cam: Aerial (C)'];
+  const CAM_NAMES = ['🎥 Chase (C)', '🎥 Close (C)', '🎥 Aerial (C)'];
+
+  rebuildHometownMissions();
 
   const keys = {};
   const zipInputEl = document.getElementById('zipInput');
@@ -1904,13 +2465,26 @@
       return;
     }
 
+    if (e.code === 'Tab' || e.code === 'Escape') {
+      e.preventDefault();
+      if (document.getElementById('titleOverlay').style.display !== 'none') {
+        if (gameStarted) document.getElementById('titleOverlay').style.display = 'none';
+        return;
+      }
+      toggleMissionBoard();
+      return;
+    }
+
     keys[e.code] = true;
     if (!gameStarted && (e.code === 'Enter' || e.code === 'Space')) {
       startGame();
       return;
     }
+    if (missionBoardOpen) return;
+
     if (e.code === 'KeyP') openZipCustomizer();
     if (e.code === 'KeyG') cycleDistrictFastTravel();
+    if (e.code === 'KeyR') cycleRadioStation();
     if (e.code === 'KeyC') cycleCamera();
     if (e.code === 'KeyT') cycleTimeOfDay();
     if (e.code === 'KeyM') toggleMute();
@@ -1966,13 +2540,14 @@
     touchExitBtn.addEventListener('click', onHop);
   }
 
-  // --- DISTRICT FAST-TRAVEL (G KEY OR TOP-RIGHT BUTTON) ---
-  function cycleDistrictFastTravel() {
+  // --- DISTRICT FAST-TRAVEL (G KEY OR MISSION BOARD) ---
+  function teleportToDistrict(idx, showBanner = true) {
     sfx.init();
-    currentDistrictIdx = (currentDistrictIdx + 1) % WORLD_DISTRICTS.length;
+    currentDistrictIdx = idx % WORLD_DISTRICTS.length;
     const dist = WORLD_DISTRICTS[currentDistrictIdx];
+    lastDetectedDistrictId = dist.id;
     const btn = document.getElementById('btnDistrict');
-    if (btn) btn.textContent = `🗺️ ${dist.name} (G)`;
+    if (btn) btn.textContent = `${dist.name} (G)`;
 
     const targetObj = activeVehicle || leo;
     targetObj.x = dist.x;
@@ -1989,11 +2564,39 @@
       leo.group.rotation.y = dist.h;
     }
     sfx.playJump();
-    showStuntBanner(dist.name.toUpperCase(), dist.desc.toUpperCase());
+    showZoneToast(dist.name);
+    if (showBanner) showStuntBanner(dist.name.toUpperCase(), dist.desc.toUpperCase(), false);
+  }
+
+  function cycleDistrictFastTravel() {
+    teleportToDistrict((currentDistrictIdx + 1) % WORLD_DISTRICTS.length, true);
   }
 
   const btnDistrictEl = document.getElementById('btnDistrict');
   if (btnDistrictEl) btnDistrictEl.addEventListener('click', cycleDistrictFastTravel);
+
+  const btnMissionsEl = document.getElementById('btnMissions');
+  if (btnMissionsEl) btnMissionsEl.addEventListener('click', () => toggleMissionBoard());
+  const closeBoardBtn = document.getElementById('closeBoardBtn');
+  if (closeBoardBtn) closeBoardBtn.addEventListener('click', () => toggleMissionBoard(false));
+  const radarFrameEl = document.getElementById('radarFrame');
+  if (radarFrameEl) radarFrameEl.addEventListener('click', () => toggleMissionBoard());
+
+  const btnRadioEl = document.getElementById('btnRadio');
+  if (btnRadioEl) btnRadioEl.addEventListener('click', () => cycleRadioStation());
+  const radioBannerEl = document.getElementById('radioBanner');
+  if (radioBannerEl) radioBannerEl.addEventListener('click', () => cycleRadioStation());
+  const vcGadgetSlotEl = document.getElementById('vcGadgetSlot');
+  if (vcGadgetSlotEl) vcGadgetSlotEl.addEventListener('click', () => triggerVehicleGadget());
+
+  const btnSummonRecRideEl = document.getElementById('btnSummonRecRide');
+  if (btnSummonRecRideEl) {
+    btnSummonRecRideEl.addEventListener('click', () => {
+      sfx.init();
+      const m = MISSIONS[missionIdx];
+      if (m) summonAndBoardVehicle(m.recommendedVeh);
+    });
+  }
 
   document.getElementById('loadZipBtn').addEventListener('click', () => {
     sfx.init();
@@ -2009,6 +2612,7 @@
   });
 
   function openZipCustomizer() {
+    toggleMissionBoard(false);
     document.getElementById('titleOverlay').style.display = 'flex';
     zipInputEl.focus();
     zipInputEl.select();
@@ -2034,18 +2638,28 @@
     items.forEach((el, idx) => {
       el.classList.toggle('active', activeVehicle === worldVehicles[idx]);
     });
+    const slotKey = document.getElementById('vcSlotKey');
     if (activeVehicle) {
       document.getElementById('vehIcon').textContent = activeVehicle.spec.emoji;
       document.getElementById('vehName').textContent = activeVehicle.spec.name;
-      document.getElementById('vehSub').textContent = activeVehicle.spec.sub;
+      if (slotKey) {
+        const id = activeVehicle.spec.id;
+        slotKey.textContent =
+          id === 'firetruck' ? '[Z] WATER' :
+          id === 'pizza' ? '[Z] PIZZA' :
+          id === 'icecream' ? '[Z] CONE' :
+          id === 'trex' ? '[Z] ROAR' :
+          id === 'monster' ? '[Z] HOP' :
+          id === 'helicopter' ? '[Z] DOWN' : '[Z] HORN';
+      }
     } else {
       document.getElementById('vehIcon').textContent = '🏃';
       document.getElementById('vehName').textContent = 'Junior Mayor Leo (On Foot)';
-      document.getElementById('vehSub').textContent = 'Press [E] near any ride or [1-9] to summon!';
+      if (slotKey) slotKey.textContent = '[Z] JUMP';
     }
   }
 
-  function summonAndBoardVehicle(index) {
+  function summonAndBoardVehicle(index, showToast = true) {
     const targetVeh = worldVehicles[index];
     const refPos = activeVehicle ? activeVehicle : leo;
     targetVeh.x = refPos.x;
@@ -2059,7 +2673,7 @@
     activeVehicle = targetVeh;
     leo.group.visible = false;
     sfx.playJump();
-    showStuntBanner(targetVeh.spec.emoji + ' ' + targetVeh.spec.name.toUpperCase(), 'READY TO ROLL!');
+    if (showToast) showVehicleToast(targetVeh.spec.name);
     updateVehicleHUD();
   }
 
@@ -2074,6 +2688,7 @@
       leo.group.visible = true;
       activeVehicle = null;
       sfx.playJump();
+      showVehicleToast('ON FOOT • JUNIOR MAYOR LEO');
       updateVehicleHUD();
     } else {
       let best = null;
@@ -2089,25 +2704,30 @@
         activeVehicle = best;
         leo.group.visible = false;
         sfx.playJump();
-        showStuntBanner(best.spec.emoji + ' ' + best.spec.name.toUpperCase(), 'HOPPED IN!');
+        showVehicleToast(best.spec.name);
         updateVehicleHUD();
       }
     }
   }
 
   let bannerTimeout = null;
-  function showStuntBanner(mainText, subText) {
+  function showStuntBanner(mainText, subText, isMissionPassed = false) {
     const banner = document.getElementById('stuntBanner');
     document.getElementById('stuntMain').textContent = mainText;
     document.getElementById('stuntSub').textContent = subText;
+    banner.classList.toggle('mission-passed', !!isMissionPassed);
     banner.classList.add('active');
     if (bannerTimeout) clearTimeout(bannerTimeout);
-    bannerTimeout = setTimeout(() => banner.classList.remove('active'), 2200);
+    bannerTimeout = setTimeout(() => {
+      banner.classList.remove('active');
+      banner.classList.remove('mission-passed');
+    }, isMissionPassed ? 3400 : 2200);
   }
 
   function addScore(pts) {
     score += pts;
-    document.getElementById('scoreVal').textContent = score.toLocaleString() + ' PTS';
+    const formatted = '$' + String(Math.max(0, Math.floor(score))).padStart(8, '0');
+    document.getElementById('scoreVal').textContent = formatted;
   }
 
   function triggerVehicleGadget() {
@@ -2139,12 +2759,12 @@
       if (activeVehicle.y <= getTerrainHeightAt(activeVehicle.x, activeVehicle.z) + 1.0) {
         activeVehicle.vy = 26;
         sfx.playJump();
-        showStuntBanner('🛻 HYDRAULIC MEGA-HOP!', '+150 STUNT PTS');
+        showStuntBanner('HYDRAULIC MEGA-HOP!', '+$150 STUNT BONUS', false);
         addScore(150);
       }
     } else if (id === 'trex') {
       sfx.playRoar();
-      showStuntBanner('🦖 T-REX MEGA ROAR!!', '+200 DINO POWER');
+      showStuntBanner('T-REX MEGA ROAR!!', '+$200 DINO POWER', false);
       addScore(200);
       physicsProps.forEach(p => {
         const d = Math.hypot(p.mesh.position.x - activeVehicle.x, p.mesh.position.z - activeVehicle.z);
@@ -2154,6 +2774,15 @@
           p.vz = (p.mesh.position.z - activeVehicle.z) * 1.8;
         }
       });
+      // Check if roaring near the Dino Canyon Roar objective!
+      const curM = MISSIONS[missionIdx];
+      if (curM && curM.type === 'roar') {
+        activeObjectives.forEach((o, i) => {
+          if (!o.done && o.needsRoar && Math.hypot(o.x - activeVehicle.x, o.z - activeVehicle.z) < 42) {
+            advanceMissionObjective(i, 'BABY DINOS WOKE UP!');
+          }
+        });
+      }
     } else if (id === 'pizza' || id === 'icecream') {
       sfx.playJump();
       const isPizza = id === 'pizza';
@@ -2163,8 +2792,19 @@
       );
       proj.position.set(activeVehicle.x + fwdX * 4, activeVehicle.y + 3.2, activeVehicle.z + fwdZ * 4);
       scene.add(proj);
-      projectiles.push({ mesh: proj, vx: fwdX * 55, vy: 10, vz: fwdZ * 55, life: 1.4 });
+      projectiles.push({ mesh: proj, vx: fwdX * 55, vy: 10, vz: fwdZ * 55, life: 1.4, kind: id });
       addScore(50);
+    } else if (id === 'police') {
+      sfx.playHorn();
+      // Patrol Rescue Beam tags nearby Runaway Robo-Pups!
+      const curM = MISSIONS[missionIdx];
+      if (curM && curM.type === 'robopup') {
+        activeObjectives.forEach((o, i) => {
+          if (!o.done && Math.hypot(o.x - activeVehicle.x, o.z - activeVehicle.z) < 34) {
+            advanceMissionObjective(i, 'ROBO-PUP RESCUED!');
+          }
+        });
+      }
     } else {
       sfx.playHorn();
     }
@@ -2184,7 +2824,7 @@
     sunLight.intensity = p.sun;
     sunLight.color.setHex(p.sunCol);
     renderer.toneMappingExposure = p.exposure;
-    const spotInt = timeMode === 0 ? 0.0 : timeMode === 1 ? 1.5 : 3.5;
+    const spotInt = timeMode === 1 ? 0.0 : timeMode === 3 ? 3.5 : 1.2;
     worldVehicles.forEach(v => {
       if (v.headSpot) v.headSpot.intensity = spotInt;
     });
@@ -2204,6 +2844,18 @@
     gameStarted = true;
     document.getElementById('titleOverlay').style.display = 'none';
     sfx.playFanfare();
+    updateVehicleHUD();
+    showVehicleToast(activeVehicle ? activeVehicle.spec.name : 'Junior Mayor Leo');
+    showZoneToast('Downtown');
+    const m = MISSIONS[missionIdx];
+    if (m) showDialogueSubtitle(m.giver, m.dialogue);
+    // Show initial radio station toast
+    const banner = document.getElementById('radioBanner');
+    if (banner) {
+      banner.classList.add('visible');
+      if (radioToastTimer) clearTimeout(radioToastTimer);
+      radioToastTimer = setTimeout(() => banner.classList.remove('visible'), 3200);
+    }
   }
   document.getElementById('startBtn').addEventListener('click', startGame);
 
@@ -2219,8 +2871,7 @@
     const zName = urlParams.get('zone');
     const foundIdx = WORLD_DISTRICTS.findIndex(d => d.id === zName);
     if (foundIdx >= 0) {
-      currentDistrictIdx = (foundIdx - 1 + WORLD_DISTRICTS.length) % WORLD_DISTRICTS.length;
-      cycleDistrictFastTravel();
+      teleportToDistrict(foundIdx, false);
     }
   }
   if (urlParams.get('autostart') === '1') {
@@ -2284,7 +2935,7 @@
       }
     });
 
-    if (!gameStarted || document.getElementById('titleOverlay').style.display !== 'none') {
+    if (!gameStarted || missionBoardOpen || document.getElementById('titleOverlay').style.display !== 'none') {
       if (!gameStarted) {
         titleOrbitAngle += dt * 0.22;
         camera.position.set(
@@ -2296,6 +2947,14 @@
       }
       return;
     }
+
+    // Tick Vice City Clock (1 game minute per real second) & Kids Radio
+    vcGameMinutes = (vcGameMinutes + dt) % (24 * 60);
+    const clkH = String(Math.floor(vcGameMinutes / 60)).padStart(2, '0');
+    const clkM = String(Math.floor(vcGameMinutes % 60)).padStart(2, '0');
+    const clkEl = document.getElementById('vcClock');
+    if (clkEl) clkEl.textContent = `${clkH}:${clkM}`;
+    sfx.updateRadio(dt, !!activeVehicle);
 
     const throttle = (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) - (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
     const steer = (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0) - (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0);
@@ -2467,6 +3126,10 @@
       const mph = Math.round(Math.abs(v.speed) * 1.6);
       document.getElementById('speedVal').textContent = mph;
       document.getElementById('nitroFill').style.width = nitro + '%';
+      const turboBar = document.getElementById('vcTurboBar');
+      if (turboBar) turboBar.style.width = nitro + '%';
+      const hypeBar = document.getElementById('vcHypeBar');
+      if (hypeBar) hypeBar.style.width = Math.min(100, heroHype) + '%';
       document.getElementById('interactPrompt').style.display = 'none';
     } else {
       leo.heading += steer * 3.2 * dt;
@@ -2588,20 +3251,30 @@
     if (Math.abs(soccerBall.z - 42) < 9 && (Math.abs(soccerBall.x - 17) < 4.5 || Math.abs(soccerBall.x - 93) < 4.5)) {
       addScore(1000);
       stars += 1;
-      document.getElementById('starsVal').textContent = `⭐ ${stars} HERO BADGES`;
-      showStuntBanner('⚽ GOOOOOOAL!!', `+1,000 ${hometown.city.toUpperCase()} STADIUM BONUS!`);
+      heroHype = Math.min(100, heroHype + 30);
+      updateHeroStars(true);
+      showStuntBanner('⚽ GOOOOOOAL!!', `+$1,000 ${hometown.city.toUpperCase()} STADIUM BONUS!`, false);
       sfx.playFanfare();
       spawnConfetti(soccerBall.x, 4, soccerBall.z);
       soccerBall.x = 55;
       soccerBall.z = 42;
       soccerBall.vx = 0;
       soccerBall.vz = 0;
+
+      // Advance Stadium Cup mission if active
+      const curM = MISSIONS[missionIdx];
+      if (curM && curM.type === 'soccer') {
+        const nextIdx = activeObjectives.findIndex(o => !o.done);
+        if (nextIdx >= 0) advanceMissionObjective(nextIdx, 'STADIUM GOAL SCORED!');
+      }
     }
     soccerBall.mesh.position.set(soccerBall.x, soccerBall.y, soccerBall.z);
     soccerBall.mesh.rotation.x += soccerBall.vz * dt * 0.35;
     soccerBall.mesh.rotation.z -= soccerBall.vx * dt * 0.35;
 
     // --- WATER CANNON DROPS, PROJECTILES & CONFETTI ---
+    const curM = MISSIONS[missionIdx];
+
     for (let i = waterDrops.length - 1; i >= 0; i--) {
       const w = waterDrops[i];
       w.life -= dt;
@@ -2610,9 +3283,14 @@
       w.mesh.position.z += w.vz * dt;
       w.vy -= 30 * dt;
 
-      const m = MISSIONS[missionIdx];
-      if (m.type === 'fire' && Math.hypot(w.mesh.position.x - m.x, w.mesh.position.z - m.z) < 14) {
-        completeCurrentMission();
+      if (curM && curM.type === 'fire') {
+        for (let oi = 0; oi < activeObjectives.length; oi++) {
+          const o = activeObjectives[oi];
+          if (!o.done && Math.hypot(w.mesh.position.x - o.x, w.mesh.position.z - o.z) < 15) {
+            advanceMissionObjective(oi, 'BLAZE EXTINGUISHED!');
+            break;
+          }
+        }
       }
       if (w.life <= 0 || w.mesh.position.y < 0) {
         scene.remove(w.mesh);
@@ -2627,6 +3305,17 @@
       p.mesh.position.y += p.vy * dt;
       p.mesh.position.z += p.vz * dt;
       p.vy -= 28 * dt;
+
+      if (curM && (curM.type === 'delivery' || curM.type === 'icecream')) {
+        for (let oi = 0; oi < activeObjectives.length; oi++) {
+          const o = activeObjectives[oi];
+          if (!o.done && Math.hypot(p.mesh.position.x - o.x, p.mesh.position.z - o.z) < 18) {
+            advanceMissionObjective(oi, curM.type === 'delivery' ? 'HOT PIZZA DELIVERED!' : 'ICE CREAM SERVED!');
+            p.life = 0;
+            break;
+          }
+        }
+      }
       if (p.life <= 0 || p.mesh.position.y < 0) {
         scene.remove(p.mesh);
         projectiles.splice(i, 1);
@@ -2655,46 +3344,172 @@
       ai.group.position.z = ai.z;
     });
 
-    const curM = MISSIONS[missionIdx];
-    const distToMission = Math.hypot(curM.x - playerObj.x, curM.z - playerObj.z);
-    const heightDiff = Math.abs((curM.y || 0) - playerObj.y);
+    // --- ACTIVE MULTI-STEP MISSION ANIMATION, TIMER & PROXIMITY CHECKS ---
+    const nowSec = performance.now() * 0.001;
+    if (curM) {
+      if (curM.timeLimit > 0) {
+        missionTimeLeft -= dt;
+        const timerEl = document.getElementById('missionTimer');
+        if (timerEl) {
+          const secs = Math.max(0, Math.ceil(missionTimeLeft));
+          const mm = String(Math.floor(secs / 60)).padStart(2, '0');
+          const ss = String(secs % 60).padStart(2, '0');
+          timerEl.textContent = `${mm}:${ss}`;
+          timerEl.classList.toggle('urgent', secs <= 15);
+        }
+        if (missionTimeLeft <= 0) {
+          showDialogueSubtitle(curM.giver, `"Time's up! No worries, Leo — let's run it back!"`);
+          loadActiveMission(missionIdx, false);
+        }
+      }
 
-    if (distToMission < 18 && heightDiff < 22) {
-      completeCurrentMission();
+      for (let oi = 0; oi < activeObjectives.length; oi++) {
+        const o = activeObjectives[oi];
+        if (o.done) continue;
+
+        // Animate 3D mission props
+        if (curM.type === 'robopup') {
+          o.angle = (o.angle || 0) + (o.spd || 0.7) * dt;
+          const prevX = o.x;
+          const prevZ = o.z;
+          o.x = o.cx + Math.cos(o.angle) * o.r;
+          o.z = o.cz + Math.sin(o.angle) * o.r;
+          if (o.mesh) {
+            const gY = Math.max(0, getTerrainHeightAt(o.x, o.z));
+            o.mesh.position.set(o.x, gY, o.z);
+            o.mesh.rotation.y = Math.atan2(o.x - prevX, o.z - prevZ);
+            if (o.mesh.userData.animPart) {
+              o.mesh.userData.animPart.position.y = Math.abs(Math.sin(nowSec * 9 + oi)) * 1.1;
+            }
+          }
+        } else if (o.mesh && o.mesh.userData.animPart) {
+          if (curM.type === 'fire') {
+            o.mesh.userData.animPart.scale.y = 0.85 + Math.sin(nowSec * 14 + oi) * 0.22;
+          } else if (curM.type === 'delivery') {
+            o.mesh.userData.animPart.rotation.y += dt * 2.4;
+            o.mesh.userData.animPart.position.y = 4.6 + Math.sin(nowSec * 3.5 + oi) * 0.6;
+          } else if (curM.type === 'icecream') {
+            o.mesh.userData.animPart.rotation.y += dt * 1.2;
+            o.mesh.userData.animPart.position.y = Math.sin(nowSec * 3.2 + oi) * 0.55;
+          } else if (curM.type === 'checkpoint' || curM.type === 'roar') {
+            o.mesh.userData.animPart.rotation.y += dt * 1.6;
+          }
+        }
+
+        // Check player interaction distance for each mission type
+        if (curM.type !== 'soccer') {
+          const distO = Math.hypot(o.x - playerObj.x, o.z - playerObj.z);
+          const heightDiffO = Math.abs((o.y || 0) - playerObj.y);
+          if (distO < 18 && heightDiffO < 24) {
+            if (curM.type === 'fire') {
+              // Auto-douse if driving the Fire Engine right up to the blaze, or hint to spray!
+              if (activeVehicle && activeVehicle.spec.id === 'firetruck') {
+                sfx.playSplash();
+                advanceMissionObjective(oi, 'BLAZE EXTINGUISHED!');
+              } else {
+                advanceMissionObjective(oi, 'BLAZE HELPED!');
+              }
+            } else if (curM.type === 'roar' && o.needsRoar) {
+              if (activeVehicle && activeVehicle.spec.id === 'trex') {
+                sfx.playRoar();
+                advanceMissionObjective(oi, 'BABY DINOS WOKE UP!');
+              } else {
+                advanceMissionObjective(oi, 'DINO NEST VISITED!');
+              }
+            } else {
+              const labelMsg =
+                curM.type === 'delivery' ? 'HOT PIZZA DELIVERED!' :
+                curM.type === 'icecream' ? 'ICE CREAM SERVED!' :
+                curM.type === 'robopup' ? 'ROBO-PUP CAUGHT!' : 'CHECKPOINT CLEARED!';
+              advanceMissionObjective(oi, labelMsg);
+            }
+          }
+        }
+      }
     }
 
-    const angleToTarget = Math.atan2(curM.x - playerObj.x, curM.z - playerObj.z) - playerObj.heading;
+    // Track nearest active objective for compass & golden beacon
+    const nextTarget = getNextActiveObjective();
+    const distToMission = Math.hypot(nextTarget.x - playerObj.x, nextTarget.z - playerObj.z);
+    const bY = nextTarget.y !== undefined ? nextTarget.y : Math.max(0, getTerrainHeightAt(nextTarget.x, nextTarget.z));
+    beaconGroup.position.set(nextTarget.x, bY, nextTarget.z);
+
+    const angleToTarget = Math.atan2(nextTarget.x - playerObj.x, nextTarget.z - playerObj.z) - playerObj.heading;
     const deg = -(angleToTarget * 180) / Math.PI;
     document.getElementById('compassArrow').style.transform = `rotate(${deg}deg)`;
     document.getElementById('compassDist').textContent = `${Math.round(distToMission)}m to Objective`;
+
+    // Auto-detect district crossing for iconic Vice City pink script zone toast!
+    let closestDist = WORLD_DISTRICTS[0];
+    let bestD = Infinity;
+    for (let i = 0; i < WORLD_DISTRICTS.length; i++) {
+      const dd = Math.hypot(WORLD_DISTRICTS[i].x - playerObj.x, WORLD_DISTRICTS[i].z - playerObj.z);
+      if (dd < bestD) {
+        bestD = dd;
+        closestDist = WORLD_DISTRICTS[i];
+      }
+    }
+    if (closestDist && closestDist.id !== lastDetectedDistrictId && bestD < 340) {
+      lastDetectedDistrictId = closestDist.id;
+      showZoneToast(closestDist.name);
+      const btn = document.getElementById('btnDistrict');
+      if (btn) btn.textContent = `${closestDist.name} (G)`;
+    }
 
     drawMinimap(playerObj, curM);
   }
 
   function completeCurrentMission() {
-    addScore(1500);
-    stars += 1;
-    document.getElementById('starsVal').textContent = `⭐ ${stars} HERO BADGES`;
     const m = MISSIONS[missionIdx];
-    showStuntBanner(`🌟 ${hometown.city.toUpperCase()} HERO!`, '+1,500 PTS & HERO BADGE!');
-    sfx.playFanfare();
-    spawnConfetti(m.x, m.y || 2, m.z);
-    missionIdx = (missionIdx + 1) % MISSIONS.length;
-    syncMissionUI();
+    const reward = m ? m.reward : 1500;
+    addScore(reward);
+    stars += 1;
+    heroHype = 100;
+    updateHeroStars(true);
+    if (m) completedMissionIds.add(m.id);
+
+    showStuntBanner('Mission Passed!', `+$${reward.toLocaleString()} • HERO FAME +`, true);
+    sfx.playMissionPassed();
+
+    const pObj = activeVehicle || leo;
+    spawnConfetti(pObj.x, (pObj.y || 0) + 4, pObj.z);
+
+    const nextIdx = (missionIdx + 1) % MISSIONS.length;
+    loadActiveMission(nextIdx, false);
+    setTimeout(() => {
+      const nextM = MISSIONS[missionIdx];
+      if (nextM && gameStarted) showDialogueSubtitle(nextM.giver, nextM.dialogue);
+    }, 3400);
   }
 
   function drawMinimap(playerObj, mission) {
     const ctx = minimapCtx;
-    const w = 172, h = 172, cx = w / 2, cy = h / 2;
+    const w = 168, h = 168, cx = w / 2, cy = h / 2;
+    const rOuter = 78;
     ctx.clearRect(0, 0, w, h);
+
+    // Clip to circular Vice City radar
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, rOuter + 2, 0, Math.PI * 2);
+    ctx.clip();
+
+    // Deep Miami twilight radar ocean/ground fill
+    ctx.fillStyle = '#120a26';
+    ctx.fillRect(0, 0, w, h);
 
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(playerObj.heading - Math.PI);
-    const scale = 0.085; // Zoomed out to show the connected 6-District highway network!
+    const scale = 0.088;
 
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
-    ctx.lineWidth = 2.5;
+    // Subtle city block zone fill around downtown
+    ctx.fillStyle = 'rgba(42, 27, 78, 0.72)';
+    ctx.fillRect((-680 - playerObj.x) * scale, (-680 - playerObj.z) * scale, 1360 * scale, 1360 * scale);
+
+    // Road network
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.55)';
+    ctx.lineWidth = 2.6;
     roadXCoords.forEach(rx => {
       const x = (rx - playerObj.x) * scale;
       ctx.beginPath();
@@ -2710,36 +3525,82 @@
       ctx.stroke();
     });
 
-    // Draw District Icons/Dots on Radar
-    WORLD_DISTRICTS.forEach(d => {
-      ctx.fillStyle = '#a855f7';
+    // Draw Mission Giver Letter Blips (Classic GTA Radar Letters!)
+    ctx.font = 'bold 9px Oswald, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    MISSIONS.forEach((m, idx) => {
+      const firstObj = m.objectives[0];
+      if (!firstObj) return;
+      const gx = (firstObj.x - playerObj.x) * scale;
+      const gz = (firstObj.z - playerObj.z) * scale;
+      if (Math.hypot(gx, gz) > rOuter - 8) return;
+      ctx.save();
+      ctx.translate(gx, gz);
+      ctx.rotate(-(playerObj.heading - Math.PI));
+      ctx.fillStyle = idx === missionIdx ? m.codeColor : 'rgba(15, 10, 32, 0.85)';
+      ctx.strokeStyle = m.codeColor;
+      ctx.lineWidth = 1.4;
+      ctx.fillRect(-6, -6, 12, 12);
+      ctx.strokeRect(-6, -6, 12, 12);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(m.code, 0, 0.5);
+      ctx.restore();
+    });
+
+    // Draw ALL remaining Active Mission Objective Blips (clamped to rim if far)
+    const pulse = 1 + Math.sin(performance.now() * 0.008) * 0.25;
+    activeObjectives.forEach(o => {
+      if (o.done) return;
+      const mx = (o.x - playerObj.x) * scale;
+      const mz = (o.z - playerObj.z) * scale;
+      const mDist = Math.hypot(mx, mz);
+      const maxR = rOuter - 8;
+      const clampedX = mDist > maxR ? (mx / mDist) * maxR : mx;
+      const clampedZ = mDist > maxR ? (mz / mDist) * maxR : mz;
+
+      ctx.fillStyle = '#ff49a8';
       ctx.beginPath();
-      ctx.arc((d.x - playerObj.x) * scale, (d.z - playerObj.z) * scale, 3.0, 0, Math.PI * 2);
+      ctx.arc(clampedX, clampedZ, 5.2 * pulse, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffd166';
+      ctx.beginPath();
+      ctx.arc(clampedX, clampedZ, 3.0, 0, Math.PI * 2);
       ctx.fill();
     });
 
-    // Draw Golden Mission Beacon (clamped to radar edge if far away)
-    const mx = (mission.x - playerObj.x) * scale;
-    const mz = (mission.z - playerObj.z) * scale;
-    const mDist = Math.hypot(mx, mz);
-    const maxR = 74;
-    const clampedX = mDist > maxR ? (mx / mDist) * maxR : mx;
-    const clampedZ = mDist > maxR ? (mz / mDist) * maxR : mz;
-
-    ctx.fillStyle = '#facc15';
-    ctx.beginPath();
-    ctx.arc(clampedX, clampedZ, 5.5, 0, Math.PI * 2);
-    ctx.fill();
-
+    ctx.restore();
     ctx.restore();
 
-    ctx.fillStyle = '#4ade80';
+    // Rotating 'N' North Badge on Radar Rim (Iconic GTA Radar Detail!)
+    const northAngle = playerObj.heading - Math.PI;
+    const nx = cx + Math.sin(-northAngle) * (rOuter - 7);
+    const ny = cy - Math.cos(-northAngle) * (rOuter - 7);
+    ctx.fillStyle = '#090512';
     ctx.beginPath();
-    ctx.moveTo(cx, cy - 7);
-    ctx.lineTo(cx - 5, cy + 6);
-    ctx.lineTo(cx + 5, cy + 6);
+    ctx.arc(nx, ny, 8.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#00e5ff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 10px Oswald, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('N', nx, ny + 0.5);
+
+    // Center Player Chevron
+    ctx.fillStyle = '#42f59b';
+    ctx.strokeStyle = '#090512';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - 8);
+    ctx.lineTo(cx - 6, cy + 6);
+    ctx.lineTo(cx, cy + 3);
+    ctx.lineTo(cx + 6, cy + 6);
     ctx.closePath();
     ctx.fill();
+    ctx.stroke();
   }
 
   window.addEventListener('resize', () => {
