@@ -559,20 +559,20 @@
   const roadZCoords = [-660, -420, -260, -140, -20, 100, 220, 660];
 
   const hometown = {
-    zip: '94040',
-    city: 'Mountain View',
-    state: 'California',
-    stateAbbr: 'CA',
-    lat: 37.3855,
-    lon: -122.088,
+    zip: 'VICE',
+    city: 'Super Leo Island',
+    state: 'Vice Bay',
+    stateAbbr: 'SL',
+    lat: 25.79,
+    lon: -80.13,
     biome: 'coastal',
-    biomeLabel: 'Coastal Bay',
-    elevMin: 24,
-    elevMax: 68,
-    tempF: 68,
-    weatherDesc: '☀️ Sunny',
-    streets: ['Castro St', 'El Camino Real', 'Miramonte Ave', 'Shoreline Blvd', 'California St', 'Dana St'],
-    landmarks: ['Cuesta Park', 'Pioneer Park', 'Civic Center Plaza', 'Eagle Park', 'Rengstorff Park']
+    biomeLabel: 'Tropical Vice Bay',
+    elevMin: 0,
+    elevMax: 42,
+    tempF: 78,
+    weatherDesc: '🌴 Sunny Breeze',
+    streets: ['Ocean Blvd', 'Palm Avenue', 'Flamingo Way', 'Starlight Dr', 'Boardwalk Lane', 'Sunset Blvd'],
+    landmarks: ['Palm Grove Park', "Leo's Pizza Plaza", 'Sunset Lighthouse', 'Sunny Scoops Beach', 'Starlight Pier']
   };
 
   let currentElevationGrid = null;
@@ -1187,17 +1187,21 @@
 
     if (welcomeSignMeshN) {
       welcomeSignMeshN.material.map = makeSignTexture(
-        'DOWNTOWN ' + hometown.city.toUpperCase(),
-        `ZIP ${hometown.zip} • ${hometown.biomeLabel.toUpperCase()}`,
-        '#065f46'
+        'DOWNTOWN SUPER LEO CITY',
+        'PALM GROVE PARK • PIZZA PLAZA • HERO HQ',
+        '#701a75',
+        '#ff49a8',
+        '#ffffff'
       );
       welcomeSignMeshN.material.needsUpdate = true;
     }
     if (welcomeSignMeshS) {
       welcomeSignMeshS.material.map = makeSignTexture(
-        'WELCOME TO ' + hometown.city.toUpperCase(),
-        `${hometown.state.toUpperCase()} (${hometown.zip}) • ELEV ${hometown.elevMin}m-${hometown.elevMax}m`,
-        '#065f46'
+        'WELCOME TO SUPER LEO ISLAND',
+        'OCEAN CAUSEWAY • LIGHTHOUSE PIER • RESORT BEACH',
+        '#0f172a',
+        '#00e5ff',
+        '#ffffff'
       );
       welcomeSignMeshS.material.needsUpdate = true;
     }
@@ -1390,179 +1394,364 @@
     }
   }
 
-  // --- LIVE ZIP CODE GEOCODER + OPENSTREETMAP + ELEVATION TERRAIN FETCHER ---
-  const FALLBACK_ZIPS = {
-    '94040': { city: 'Mountain View', state: 'California', stateAbbr: 'CA', lat: 37.3855, lon: -122.088 },
-    '10036': { city: 'New York', state: 'New York', stateAbbr: 'NY', lat: 40.759, lon: -73.989 },
-    '81611': { city: 'Aspen', state: 'Colorado', stateAbbr: 'CO', lat: 39.1911, lon: -106.8175 },
-    '86336': { city: 'Sedona', state: 'Arizona', stateAbbr: 'AZ', lat: 34.8697, lon: -111.761 },
-    '33139': { city: 'Miami Beach', state: 'Florida', stateAbbr: 'FL', lat: 25.7907, lon: -80.13 },
-    '90210': { city: 'Beverly Hills', state: 'California', stateAbbr: 'CA', lat: 34.0901, lon: -118.4065 },
-    '98101': { city: 'Seattle', state: 'Washington', stateAbbr: 'WA', lat: 47.6101, lon: -122.3344 }
-  };
+  // --- HANDCRAFTED EXPLORABLE OPEN-WORLD ISLAND (FOOT & CAR DISCOVERY!) ---
+  const ISLAND_LANDMARKS = [
+    { id: 'palm_park', emoji: '🌴', name: 'Palm Grove Trampoline Park', sub: 'Fountain, Benches & Bouncy Jump Pads', x: -110, z: 40, radius: 52 },
+    { id: 'pizza_plaza', emoji: '🍕', name: "Leo's Neon Pizza Plaza", sub: 'Spinning Rooftop Pizza & Patio', x: 165, z: -20, radius: 46 },
+    { id: 'fire_hq', emoji: '🚒', name: 'Central Fire Station HQ', sub: 'Drive-Through Bay & Big Red Engine', x: -185, z: 100, radius: 46 },
+    { id: 'hero_hq', emoji: '🚓', name: 'Hero Patrol Precinct', sub: 'Neon Beacon & Patrol Cruisers', x: -185, z: -140, radius: 46 },
+    { id: 'sunny_scoops', emoji: '🍦', name: 'Sunny Scoops Beach Parlor', sub: 'Pastel Ice Cream Shop & Umbrellas', x: -130, z: 850, radius: 52 },
+    { id: 'ferris_boardwalk', emoji: '🎡', name: 'Starlight Boardwalk & Wheel', sub: 'Giant Ferris Wheel & Ocean Lamps', x: 140, z: 890, radius: 58 },
+    { id: 'lighthouse_pier', emoji: '🗼', name: 'Sunset Lighthouse & Pier', sub: 'Walkable Ocean Pier & Rotating Beacon', x: 340, z: 960, radius: 60 },
+    { id: 'soccer_stadium', emoji: '⚽', name: 'Super Leo Soccer Stadium', sub: '3D Car-Soccer Pitch & Floodlights', x: 55, z: 42, radius: 55 },
+    { id: 'stunt_airport', emoji: '✈️', name: 'Stunt Airport & Tower', sub: 'Twin Runways, Hangars & Jumbo Jets', x: 920, z: 120, radius: 95 },
+    { id: 'dino_canyon', emoji: '🦖', name: 'Dino Safari Canyon', sub: 'Red Rock Arches, Volcano & T-Rex', x: -920, z: 0, radius: 95 }
+  ];
+  const discoveredLandmarks = new Set();
+  const collectibleStars = [];
+  const jumpPads = [];
+  const citizens = [];
+  let lighthouseBeam = null;
+  let rooftopPizzaSign = null;
+  let customWaypoint = null;
 
-  function classifyBiome(stateAbbr, elevMax, tempF) {
-    if (['AZ', 'NM', 'NV'].includes(stateAbbr)) return { biome: 'desert', label: 'Red Rock Desert' };
-    if (['CO', 'UT', 'WY', 'MT', 'ID', 'VT', 'NH', 'AK'].includes(stateAbbr) || elevMax > 1100 || tempF <= 34) {
-      return { biome: 'alpine', label: 'Alpine Snow Peaks' };
-    }
-    if (['CA', 'FL', 'HI', 'SC', 'LA'].includes(stateAbbr)) return { biome: 'coastal', label: 'Coastal Palm Bay' };
-    return { biome: 'metro', label: 'Highland Metro' };
+  // Custom 3D Cyan Waypoint dropped by clicking the Interactive Street Map (M)
+  const waypointGroup = new THREE.Group();
+  const wpBeam = new THREE.Mesh(
+    new THREE.CylinderGeometry(3.2, 3.2, 110, 16, 1, true),
+    new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.28, side: THREE.DoubleSide })
+  );
+  wpBeam.position.y = 55;
+  const wpRing = new THREE.Mesh(
+    new THREE.TorusGeometry(4.5, 0.45, 10, 24),
+    new THREE.MeshBasicMaterial({ color: 0x00e5ff })
+  );
+  wpRing.rotation.x = Math.PI / 2;
+  wpRing.position.y = 0.6;
+  waypointGroup.add(wpBeam, wpRing);
+  waypointGroup.visible = false;
+  scene.add(waypointGroup);
+
+  function addJumpPad(x, z, baseY = 0, power = 34) {
+    const g = new THREE.Group();
+    const base = new THREE.Mesh(
+      new THREE.CylinderGeometry(4.2, 4.8, 0.7, 20),
+      new THREE.MeshStandardMaterial({ color: 0x140b29, roughness: 0.4, metalness: 0.5 })
+    );
+    base.position.y = 0.35;
+    const glow = new THREE.Mesh(
+      new THREE.CylinderGeometry(3.3, 3.3, 0.78, 20),
+      new THREE.MeshBasicMaterial({ color: 0x00e5ff })
+    );
+    glow.position.y = 0.38;
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(3.9, 0.25, 8, 24),
+      new THREE.MeshBasicMaterial({ color: 0xff49a8 })
+    );
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = 0.76;
+    g.add(base, glow, ring);
+    g.position.set(x, baseY, z);
+    scene.add(g);
+    jumpPads.push({ x, y: baseY, z, power, mesh: g, cooldown: 0 });
   }
 
-  async function loadZipCode(rawZip) {
-    const cleanZip = String(rawZip || '').trim().slice(0, 5);
-    const statusEl = document.getElementById('zipLoadStatus');
-    if (!/^\d{5}$/.test(cleanZip)) {
-      statusEl.textContent = '⚠️ Please enter a valid 5-digit US ZIP code (e.g. 94040 or 81611).';
-      return;
+  function addCollectibleStar(x, z, extraY = 3.2, hint = 'Island Secret') {
+    const baseY = Math.max(0, getTerrainHeightAt(x, z)) + extraY;
+    const g = new THREE.Group();
+    const core = new THREE.Mesh(
+      new THREE.OctahedronGeometry(1.75, 0),
+      new THREE.MeshStandardMaterial({ color: 0xffd166, emissive: 0xf59e0b, emissiveIntensity: 0.7, roughness: 0.2, metalness: 0.6 })
+    );
+    const halo = new THREE.Mesh(
+      new THREE.TorusGeometry(2.35, 0.16, 8, 20),
+      new THREE.MeshBasicMaterial({ color: 0xff49a8 })
+    );
+    g.add(core, halo);
+    g.position.set(x, baseY, z);
+    scene.add(g);
+    collectibleStars.push({ x, y: baseY, z, baseY, hint, mesh: g, collected: false });
+  }
+
+  function addCitizen(cx, cz, radius = 18, phase = 0) {
+    const shirtColors = [0xff49a8, 0x00e5ff, 0xffd166, 0x42f59b, 0xa855f7, 0xf97316];
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(1.15, 1.8, 0.75),
+      new THREE.MeshStandardMaterial({ color: shirtColors[citizens.length % shirtColors.length] })
+    );
+    body.position.y = 2.1;
+    body.castShadow = true;
+    const head = new THREE.Mesh(
+      new THREE.SphereGeometry(0.62, 10, 10),
+      new THREE.MeshStandardMaterial({ color: 0xfde68a })
+    );
+    head.position.y = 3.55;
+    const legL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.2, 0.45), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+    legL.position.set(-0.3, 0.65, 0);
+    const legR = legL.clone();
+    legR.position.x = 0.3;
+    g.add(body, head, legL, legR);
+    g.position.set(cx, 0, cz);
+    scene.add(g);
+    citizens.push({
+      mesh: g,
+      legL,
+      legR,
+      cx,
+      cz,
+      x: cx,
+      z: cz,
+      r: radius,
+      angle: phase,
+      spd: 0.32 + (citizens.length % 4) * 0.08,
+      cheerTimer: 0,
+      waveCooldown: 0
+    });
+  }
+
+  function buildExplorableWorld() {
+    // 1. PALM GROVE TRAMPOLINE PARK (Walkable Plaza, Tiered Fountain, Benches & 3 Jump Pads!)
+    const parkPad = new THREE.Mesh(
+      new THREE.CylinderGeometry(36, 36, 0.35, 32),
+      new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 })
+    );
+    parkPad.position.set(-110, 0.12, 40);
+    parkPad.receiveShadow = true;
+    scene.add(parkPad);
+
+    const fountainBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(9.5, 10.5, 1.6, 20),
+      new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.4 })
+    );
+    fountainBase.position.set(-110, 0.9, 40);
+    const fountainWater = new THREE.Mesh(
+      new THREE.CylinderGeometry(8.4, 8.4, 1.4, 20),
+      new THREE.MeshBasicMaterial({ color: 0x00e5ff })
+    );
+    fountainWater.position.set(-110, 1.0, 40);
+    const fountainSpire = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.2, 2.4, 6.2, 12),
+      new THREE.MeshStandardMaterial({ color: 0xff85c8 })
+    );
+    fountainSpire.position.set(-110, 3.6, 40);
+    scene.add(fountainBase, fountainWater, fountainSpire);
+
+    // Park Benches around Fountain
+    const benchMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.7 });
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      const bench = new THREE.Mesh(new THREE.BoxGeometry(5.5, 1.1, 1.6), benchMat);
+      bench.position.set(-110 + Math.cos(a) * 19, 0.7, 40 + Math.sin(a) * 19);
+      bench.rotation.y = -a + Math.PI / 2;
+      scene.add(bench);
     }
 
-    statusEl.textContent = `⏳ Fetching OpenStreetMap streets, real elevation terrain & weather for ${cleanZip}...`;
+    // 3 Bouncy Jump Pads in Palm Grove Park + others across the island!
+    addJumpPad(-110, 12, 0.2, 34);
+    addJumpPad(-84, 40, 0.2, 34);
+    addJumpPad(-136, 40, 0.2, 34);
+    addJumpPad(165, 12, 0.1, 32);    // Leo's Pizza Plaza jump pad
+    addJumpPad(140, 845, 0.1, 36);   // Ferris Wheel Boardwalk jump pad
+    addJumpPad(-130, 815, 0.1, 32);  // Sunny Scoops Beach jump pad
+    addJumpPad(340, 920, 0.1, 34);   // Lighthouse Pier jump pad
+    addJumpPad(845, 120, 0.1, 38);   // Airport Hangar super bounce
 
-    try {
-      let place = FALLBACK_ZIPS[cleanZip] || null;
-      try {
-        const zRes = await fetch(`https://api.zippopotam.us/us/${cleanZip}`);
-        if (zRes.ok) {
-          const zJson = await zRes.json();
-          if (zJson.places && zJson.places[0]) {
-            const p = zJson.places[0];
-            place = {
-              city: p['place name'],
-              state: p['state'],
-              stateAbbr: p['state abbreviation'],
-              lat: FALLBACK_ZIPS[cleanZip] ? FALLBACK_ZIPS[cleanZip].lat : parseFloat(p['latitude']),
-              lon: FALLBACK_ZIPS[cleanZip] ? FALLBACK_ZIPS[cleanZip].lon : parseFloat(p['longitude'])
-            };
-            if (!FALLBACK_ZIPS[cleanZip]) {
-              try {
-                const nomRes = await fetch(`https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(place.city)}&state=${encodeURIComponent(place.state)}&country=US&format=json&limit=1`);
-                if (nomRes.ok) {
-                  const nomJson = await nomRes.json();
-                  if (nomJson && nomJson[0]) {
-                    place.lat = parseFloat(nomJson[0].lat);
-                    place.lon = parseFloat(nomJson[0].lon);
-                  }
-                }
-              } catch (e) {}
-            }
-          }
-        }
-      } catch (e) {}
+    // 2. LEO'S NEON PIZZA PLAZA (X = 165, Z = -20)
+    const pizzaPatio = new THREE.Mesh(
+      new THREE.BoxGeometry(44, 0.3, 40),
+      new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.7 })
+    );
+    pizzaPatio.position.set(165, 0.15, -20);
+    scene.add(pizzaPatio);
 
-      if (!place) {
-        statusEl.textContent = `⚠️ Could not find ZIP ${cleanZip}. Try 94040, 10036, 81611, 86336, or 33139!`;
-        return;
-      }
+    const pizzaShop = new THREE.Mesh(
+      new THREE.BoxGeometry(22, 11, 16),
+      new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.45 })
+    );
+    pizzaShop.position.set(165, 5.5, -28);
+    pizzaShop.castShadow = true;
+    const pizzaStripe = new THREE.Mesh(
+      new THREE.BoxGeometry(23, 2.2, 17),
+      new THREE.MeshBasicMaterial({ color: 0xffd166 })
+    );
+    pizzaStripe.position.set(165, 11.4, -28);
+    scene.add(pizzaShop, pizzaStripe);
 
-      hometown.zip = cleanZip;
-      hometown.city = place.city;
-      hometown.state = place.state;
-      hometown.stateAbbr = place.stateAbbr;
-      hometown.lat = place.lat;
-      hometown.lon = place.lon;
+    rooftopPizzaSign = new THREE.Group();
+    const rpDisc = new THREE.Mesh(
+      new THREE.CylinderGeometry(5.5, 5.5, 0.9, 18),
+      new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xd97706, emissiveIntensity: 0.35 })
+    );
+    rpDisc.rotation.x = Math.PI / 2;
+    rooftopPizzaSign.add(rpDisc);
+    rooftopPizzaSign.position.set(165, 17.5, -28);
+    scene.add(rooftopPizzaSign);
 
-      const lats = [];
-      const lons = [];
-      for (let gz = -3; gz <= 3; gz++) {
-        for (let gx = -3; gx <= 3; gx++) {
-          lats.push((place.lat + gz * 0.004).toFixed(4));
-          lons.push((place.lon + gx * 0.004).toFixed(4));
-        }
-      }
+    const pizzaSignBoard = new THREE.Mesh(
+      new THREE.BoxGeometry(18, 3.2, 0.6),
+      new THREE.MeshBasicMaterial({ map: makeSignTexture("LEO'S NEON PIZZA", 'HOT SLICES & PATIO', '#991b1b', '#ffd166') })
+    );
+    pizzaSignBoard.position.set(165, 9.2, -19.6);
+    scene.add(pizzaSignBoard);
 
-      const elevUrl = `https://api.open-meteo.com/v1/elevation?latitude=${lats.join(',')}&longitude=${lons.join(',')}`;
-      const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${place.lat}&longitude=${place.lon}&current=temperature_2m,weather_code,is_day&temperature_unit=fahrenheit`;
-      const osmBbox = `${(place.lon - 0.0015).toFixed(4)},${(place.lat - 0.0015).toFixed(4)},${(place.lon + 0.0015).toFixed(4)},${(place.lat + 0.0015).toFixed(4)}`;
-      const osmUrl = `https://api.openstreetmap.org/api/0.6/map.json?bbox=${osmBbox}`;
+    // 3. SUNNY SCOOPS BEACH PARLOR (X = -130, Z = 850)
+    const parlor = new THREE.Mesh(
+      new THREE.BoxGeometry(24, 10, 16),
+      new THREE.MeshStandardMaterial({ color: 0xff85c8, roughness: 0.4 })
+    );
+    parlor.position.set(-130, 5, 868);
+    parlor.castShadow = true;
+    const coneRoof = new THREE.Mesh(
+      new THREE.ConeGeometry(4.2, 9.5, 14),
+      new THREE.MeshStandardMaterial({ color: 0xf59e0b })
+    );
+    coneRoof.rotation.x = Math.PI;
+    coneRoof.position.set(-130, 14.5, 868);
+    const scoopRoof = new THREE.Mesh(
+      new THREE.SphereGeometry(4.4, 14, 14),
+      new THREE.MeshStandardMaterial({ color: 0x67e8f9 })
+    );
+    scoopRoof.position.set(-130, 19.5, 868);
+    const scoopsSign = new THREE.Mesh(
+      new THREE.BoxGeometry(19, 3.2, 0.6),
+      new THREE.MeshBasicMaterial({ map: makeSignTexture('SUNNY SCOOPS', 'RAINBOW CONES • BEACH PARLOR', '#be185d', '#67e8f9') })
+    );
+    scoopsSign.position.set(-130, 8.6, 859.6);
+    scene.add(parlor, coneRoof, scoopRoof, scoopsSign);
 
-      const [elevRes, weatherRes, osmRes] = await Promise.allSettled([
-        fetch(elevUrl).then(r => r.ok ? r.json() : null),
-        fetch(weatherUrl).then(r => r.ok ? r.json() : null),
-        fetch(osmUrl).then(r => r.ok ? r.json() : null)
-      ]);
-
-      if (elevRes.status === 'fulfilled' && elevRes.value && Array.isArray(elevRes.value.elevation)) {
-        const arr = elevRes.value.elevation;
-        const minE = Math.round(Math.min(...arr));
-        const maxE = Math.round(Math.max(...arr));
-        hometown.elevMin = minE;
-        hometown.elevMax = maxE;
-        const span = Math.max(8, maxE - minE);
-        currentElevationGrid = arr.map(v => (v - minE) / span);
-      }
-
-      weatherType = 'clear';
-      if (weatherRes.status === 'fulfilled' && weatherRes.value && weatherRes.value.current) {
-        const cur = weatherRes.value.current;
-        hometown.tempF = Math.round(cur.temperature_2m);
-        const wc = cur.weather_code;
-        if (wc >= 71 && wc <= 86) {
-          weatherType = 'snow';
-          hometown.weatherDesc = '❄️ Snowing';
-        } else if (wc >= 51 && wc <= 67) {
-          weatherType = 'rain';
-          hometown.weatherDesc = '🌧️ Raining';
-        } else if (wc >= 1 && wc <= 3) {
-          hometown.weatherDesc = '⛅ Partly Cloudy';
-        } else {
-          hometown.weatherDesc = '☀️ Clear Sky';
-        }
-      }
-
-      const bInfo = classifyBiome(hometown.stateAbbr, hometown.elevMax, hometown.tempF);
-      hometown.biome = bInfo.biome;
-      hometown.biomeLabel = bInfo.label;
-      if (hometown.biome === 'alpine' && weatherType === 'clear' && hometown.tempF < 45) {
-        weatherType = 'snow';
-        hometown.weatherDesc = '❄️ Alpine Snow';
-      }
-
-      let osmJson = null;
-      if (osmRes.status === 'fulfilled' && osmRes.value && Array.isArray(osmRes.value.elements)) {
-        osmJson = osmRes.value;
-        const foundStreets = new Set();
-        const foundLandmarks = new Set();
-
-        osmJson.elements.forEach(el => {
-          if (!el.tags || !el.tags.name) return;
-          const name = el.tags.name.trim();
-          if (el.tags.highway && name.length >= 3 && name.length <= 26) {
-            foundStreets.add(name);
-          } else if (
-            (el.tags.leisure || el.tags.amenity || el.tags.shop || el.tags.tourism || el.tags.building) &&
-            name.length >= 3 && name.length <= 28
-          ) {
-            foundLandmarks.add(name);
-          }
-        });
-
-        if (foundStreets.size > 0) {
-          hometown.streets = Array.from(foundStreets).slice(0, 10);
-        } else {
-          hometown.streets = [`${hometown.city} Blvd`, 'Main St', 'Oak Ave', 'Park Way', '1st Ave', 'Maple Dr'];
-        }
-        if (foundLandmarks.size > 0) {
-          hometown.landmarks = Array.from(foundLandmarks).slice(0, 8);
-        } else {
-          hometown.landmarks = [`${hometown.city} Central Park`, `${hometown.city} Elementary`, `${hometown.city} Library`, `${hometown.city} Plaza`];
-        }
-      }
-
-      rebuildHometownScenery(osmJson);
-      rebuildHometownMissions();
-
-      document.getElementById('hudZipCity').textContent = `📍 ${hometown.city}, ${hometown.stateAbbr} (${hometown.zip})`;
-      document.getElementById('hudZipMeta').textContent = `⛰️ Elev: ${hometown.elevMin}m–${hometown.elevMax}m • ${hometown.weatherDesc} ${hometown.tempF}°F • ${hometown.biomeLabel}`;
-      document.getElementById('zipBiomeBadge').textContent = `${hometown.biomeLabel} • ${hometown.tempF}°F`;
-      statusEl.textContent = `✅ Built 3D ${hometown.city}, ${hometown.stateAbbr} (${hometown.zip})! Streets: ${hometown.streets.slice(0, 4).join(', ')}`;
-
-      sfx.playFanfare();
-      showStuntBanner(`📍 ${hometown.city.toUpperCase()}, ${hometown.stateAbbr}`, `6 DISTRICTS & ${hometown.biomeLabel.toUpperCase()} LOADED!`);
-    } catch (err) {
-      statusEl.textContent = `✅ Loaded ${hometown.city}, ${hometown.stateAbbr} (${hometown.zip})!`;
+    // Colorful Beach Umbrellas along Resort Island
+    const umbColors = [0xff49a8, 0x00e5ff, 0xffd166, 0x42f59b];
+    for (let i = 0; i < 12; i++) {
+      const ux = -260 + i * 48;
+      const uz = 945 + (i % 2) * 35;
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 5.5, 6), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+      pole.position.set(ux, 2.75, uz);
+      const top = new THREE.Mesh(
+        new THREE.ConeGeometry(4.6, 1.8, 10),
+        new THREE.MeshStandardMaterial({ color: umbColors[i % umbColors.length], roughness: 0.5 })
+      );
+      top.position.set(ux, 5.6, uz);
+      scene.add(pole, top);
     }
+
+    // 4. SUNSET LIGHTHOUSE & WALKABLE OCEAN PIER (X = 340, Z = 960..1180)
+    const pierDeck = new THREE.Mesh(
+      new THREE.BoxGeometry(20, 1.8, 220),
+      new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.85 })
+    );
+    pierDeck.position.set(340, 0.2, 1065);
+    pierDeck.receiveShadow = true;
+    scene.add(pierDeck);
+
+    // Striped Red & White Lighthouse Tower
+    for (let s = 0; s < 5; s++) {
+      const seg = new THREE.Mesh(
+        new THREE.CylinderGeometry(6.8 - s * 0.7, 7.5 - s * 0.7, 8.5, 16),
+        new THREE.MeshStandardMaterial({ color: s % 2 === 0 ? 0xffffff : 0xef4444, roughness: 0.4 })
+      );
+      seg.position.set(340, 4.5 + s * 8.5, 1165);
+      seg.castShadow = true;
+      scene.add(seg);
+    }
+    const lantern = new THREE.Mesh(
+      new THREE.CylinderGeometry(3.8, 3.8, 6.5, 14),
+      new THREE.MeshBasicMaterial({ color: 0xffd166 })
+    );
+    lantern.position.set(340, 46, 1165);
+    const lhRoof = new THREE.Mesh(
+      new THREE.ConeGeometry(4.8, 5.5, 14),
+      new THREE.MeshStandardMaterial({ color: 0xef4444 })
+    );
+    lhRoof.position.set(340, 51.5, 1165);
+    scene.add(lantern, lhRoof);
+
+    lighthouseBeam = new THREE.Group();
+    lighthouseBeam.position.set(340, 46, 1165);
+    const beamCone = new THREE.Mesh(
+      new THREE.ConeGeometry(16, 130, 14, 1, true),
+      new THREE.MeshBasicMaterial({ color: 0xffd166, transparent: true, opacity: 0.22, side: THREE.DoubleSide })
+    );
+    beamCone.rotation.z = Math.PI / 2;
+    beamCone.position.x = 65;
+    lighthouseBeam.add(beamCone);
+    scene.add(lighthouseBeam);
+
+    // 5. CENTRAL FIRE STATION HQ & HERO PATROL PRECINCT SIGNS
+    const fireSign = new THREE.Mesh(
+      new THREE.BoxGeometry(20, 3.6, 0.8),
+      new THREE.MeshBasicMaterial({ map: makeSignTexture('FIRE STATION HQ', 'BIG RED ENGINE BAY', '#b91c1c', '#facc15') })
+    );
+    fireSign.position.set(-185, 14, 100);
+    const patrolSign = new THREE.Mesh(
+      new THREE.BoxGeometry(20, 3.6, 0.8),
+      new THREE.MeshBasicMaterial({ map: makeSignTexture('HERO PATROL HQ', 'SUPER LEO PRECINCT', '#1e3a8a', '#00e5ff') })
+    );
+    patrolSign.position.set(-185, 14, -140);
+    scene.add(fireSign, patrolSign);
+
+    // 6. STADIUM FLOODLIGHT TOWERS (X = 55, Z = 42)
+    [[14, 10], [96, 10], [14, 74], [96, 74]].forEach(([fx, fz]) => {
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.9, 26, 8), new THREE.MeshStandardMaterial({ color: 0x475569 }));
+      pole.position.set(fx, 13, fz);
+      const lamp = new THREE.Mesh(new THREE.BoxGeometry(5.5, 2.2, 1.4), new THREE.MeshBasicMaterial({ color: 0xfef08a }));
+      lamp.position.set(fx, 26.5, fz);
+      scene.add(pole, lamp);
+    });
+
+    // 7. DINO CANYON GLOWING VOLCANO LANDMARK (X = -1020, Z = -200)
+    const volcano = new THREE.Mesh(
+      new THREE.ConeGeometry(58, 72, 10),
+      new THREE.MeshStandardMaterial({ color: 0x7c2d12, roughness: 0.9 })
+    );
+    volcano.position.set(-1020, 34, -200);
+    const lavaCap = new THREE.Mesh(
+      new THREE.CylinderGeometry(12, 16, 4, 10),
+      new THREE.MeshBasicMaterial({ color: 0xf97316 })
+    );
+    lavaCap.position.set(-1020, 70, -200);
+    scene.add(volcano, lavaCap);
+
+    // 8. 24 HIDDEN GOLDEN STAR COLLECTIBLES (Walkable + Car Stunt Secrets!)
+    const starSpots = [
+      [-110, 40, 9.5, 'Above Palm Grove Fountain'],
+      [-110, 12, 11.5, 'Palm Park Bounce Peak'],
+      [-84, 40, 11.5, 'East Park Bounce Peak'],
+      [165, -14, 3.2, "Leo's Pizza Patio"],
+      [165, 12, 11.0, 'Pizza Plaza Bounce Star'],
+      [-185, 100, 3.2, 'Fire Station HQ Bay'],
+      [-185, -140, 3.2, 'Hero Patrol Precinct'],
+      [55, 42, 6.0, 'Stadium Center Kickoff'],
+      [0, -32, 8.5, 'Grand Blvd Stunt Jump'],
+      [0, -225, 9.5, 'North Blvd Ramp Peak'],
+      [-220, 430, 4.5, 'Golden Gate Bridge Deck'],
+      [0, 520, 4.5, 'Ocean Causeway Overlook'],
+      [-130, 848, 3.2, 'Sunny Scoops Patio'],
+      [-130, 815, 11.5, 'Beach Parlor Bounce Star'],
+      [140, 868, 3.2, 'Starlight Ferris Wheel Deck'],
+      [140, 845, 12.5, 'Boardwalk Bounce Star'],
+      [340, 1060, 3.5, 'Sunset Pier Mid-Deck'],
+      [340, 1148, 3.8, 'Sunset Lighthouse Tip'],
+      [810, 180, 4.2, 'Inside Airport Hangar'],
+      [920, 120, 14.0, 'Over the Jumbo Jet!'],
+      [1080, -25, 13.5, 'Runway 2 Mega Ramp'],
+      [0, -960, 42.0, 'Summit Overlook Ski-Jump'],
+      [-920, 0, 5.0, 'Dino Canyon Red Rock Arch'],
+      [-920, -180, 5.0, 'Dino Volcano Trail']
+    ];
+    starSpots.forEach(([sx, sz, sy, hint]) => addCollectibleStar(sx, sz, sy, hint));
+
+    // 9. 22 FRIENDLY WANDERING CITIZENS (Palm Park, Downtown, Pizza Plaza & Resort Boardwalk!)
+    const citizenZones = [
+      [-110, 40, 22], [-110, 40, 26], [-110, 40, 18], [-110, 40, 30],
+      [165, -6, 16], [165, -6, 20], [165, -6, 14],
+      [-25, 70, 16], [25, 70, 16], [-25, -45, 18], [25, -45, 18],
+      [-130, 840, 22], [-130, 840, 26], [-60, 850, 22],
+      [110, 865, 24], [140, 865, 28], [170, 865, 22],
+      [340, 990, 8], [340, 1080, 8],
+      [55, 78, 18], [-185, 85, 14], [-185, -125, 14]
+    ];
+    citizenZones.forEach(([cx, cz, r], i) => addCitizen(cx, cz, r, i * 0.9));
   }
 
   // --- 3D ARTICULATED VEHICLE BUILDER ---
@@ -1826,21 +2015,22 @@
     return { group, legL, legR, x: 0, y: 0, z: 0, vy: 0, heading: 0, speed: 0 };
   }
 
-  // --- INITIALIZE BASE WORLD, HOMETOWN SCENERY & VEHICLES ---
+  // --- INITIALIZE BASE WORLD, EXPLORABLE LANDMARKS & PARKED VEHICLES ---
   buildBaseWorld();
   rebuildHometownScenery(null);
+  buildExplorableWorld();
 
   const worldVehicles = [];
   const spawnPositions = [
     { x: 0,    z: 75,   h: Math.PI },       // 1: Comet GT Supercar (Downtown Grand Blvd)
-    { x: -220, z: 120,  h: Math.PI },       // 2: Hero Patrol Interceptor
-    { x: -220, z: 20,   h: 0 },             // 3: Big Red Fire Engine
+    { x: -185, z: -120, h: Math.PI },       // 2: Hero Patrol Interceptor (Hero Patrol Precinct)
+    { x: -185, z: 120,  h: 0 },             // 3: Big Red Fire Engine (Central Fire Station HQ)
     { x: -920, z: 150,  h: Math.PI },       // 4: Monster Crush 4x4 (Dino Canyon Rally)
-    { x: 0,    z: 115,  h: Math.PI / 2 },   // 5: Melody Ice Cream Van
-    { x: 220,  z: 20,   h: -Math.PI / 2 },  // 6: Rocket Pizza Buggy
+    { x: -130, z: 835,  h: Math.PI / 2 },   // 5: Melody Ice Cream Van (Sunny Scoops Beach Parlor)
+    { x: 165,  z: 2,    h: -Math.PI / 2 },  // 6: Rocket Pizza Buggy (Leo's Neon Pizza Plaza)
     { x: 920,  z: 280,  h: Math.PI },       // 7: Sky-Hawk Helicopter (Stunt Airport)
-    { x: 40,   z: 520,  h: 0 },             // 8: Aqua-Jet Speedboat (Ocean Bay Channel)
-    { x: -920, z: -150, h: 0 }              // 9: Emerald Rex (Dino Canyon)
+    { x: 315,  z: 1020, h: 0 },             // 8: Aqua-Jet Speedboat (Sunset Lighthouse Marina)
+    { x: -920, z: -150, h: 0 }              // 9: Emerald Rex (Dino Safari Canyon)
   ];
 
   VEHICLE_CATALOG.forEach((spec, i) => {
@@ -2436,13 +2626,280 @@
     }
   }
 
-  function toggleMissionBoard(forceState) {
+  let activeModalTab = 'map';
+
+  function updateExplorerHUD() {
+    const collectedCount = collectibleStars.filter(s => s.collected).length;
+    const starsEl = document.getElementById('hudExplorerStars');
+    if (starsEl) starsEl.textContent = `⭐ ${collectedCount} / ${collectibleStars.length} HIDDEN STARS`;
+    const lmEl = document.getElementById('hudExplorerLandmarks');
+    if (lmEl) lmEl.textContent = `📍 ${discoveredLandmarks.size} / ${ISLAND_LANDMARKS.length} Landmarks Discovered • Press [M] for Map`;
+  }
+
+  function setCustomWaypoint(wx, wz, label = 'Custom Map Waypoint') {
+    const wy = Math.max(0, getTerrainHeightAt(wx, wz));
+    customWaypoint = { x: wx, y: wy, z: wz, label };
+    waypointGroup.position.set(wx, wy, wz);
+    waypointGroup.visible = true;
+    sfx.playCheckpoint();
+    showDialogueSubtitle('GPS Map', `Cyan waypoint set at ${label}! Follow the glowing cyan beacon!`);
+    if (missionBoardOpen && activeModalTab === 'map') drawCityStreetMap();
+  }
+
+  function teleportToCoords(tx, tz, label) {
+    const targetObj = activeVehicle || leo;
+    const ty = Math.max(0, getTerrainHeightAt(tx, tz));
+    targetObj.x = tx;
+    targetObj.y = ty;
+    targetObj.z = tz;
+    targetObj.speed = 0;
+    if (activeVehicle) {
+      activeVehicle.vy = 0;
+      activeVehicle.root.position.set(tx, ty, tz);
+    } else {
+      leo.vy = 0;
+      leo.group.position.set(tx, ty, tz);
+    }
+    sfx.playJump();
+    showZoneToast(label);
+  }
+
+  function renderLandmarkSidebar() {
+    const listEl = document.getElementById('landmarkList');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+    ISLAND_LANDMARKS.forEach(lm => {
+      const isFound = discoveredLandmarks.has(lm.id);
+      const item = document.createElement('button');
+      item.className = 'vc-lm-item' + (isFound ? ' discovered' : '');
+      item.innerHTML = `
+        <div>
+          <div class="vc-lm-name">${lm.emoji} ${lm.name}</div>
+          <div class="vc-lm-sub">${lm.sub}</div>
+        </div>
+        <span class="vc-lm-tag">${isFound ? '✓ FOUND' : 'GO ▶'}</span>
+      `;
+      item.addEventListener('click', () => {
+        sfx.init();
+        toggleMissionBoard(false);
+        teleportToCoords(lm.x, lm.z + 18, lm.name);
+      });
+      listEl.appendChild(item);
+    });
+  }
+
+  function drawCityStreetMap() {
+    const mapCanvas = document.getElementById('cityMapCanvas');
+    if (!mapCanvas) return;
+    const ctx = mapCanvas.getContext('2d');
+    const W = mapCanvas.width;
+    const H = mapCanvas.height;
+    const worldSpan = 2600; // -1300..+1300
+    const toMapX = wx => ((wx + worldSpan / 2) / worldSpan) * W;
+    const toMapY = wz => ((wz + worldSpan / 2) / worldSpan) * H;
+
+    // 1. Tropical Ocean Backdrop
+    ctx.fillStyle = '#0c1633';
+    ctx.fillRect(0, 0, W, H);
+
+    // Subtle map grid lines
+    ctx.strokeStyle = 'rgba(0, 229, 255, 0.08)';
+    ctx.lineWidth = 1;
+    for (let g = 0; g < W; g += 50) {
+      ctx.beginPath(); ctx.moveTo(g, 0); ctx.lineTo(g, H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, g); ctx.lineTo(W, g); ctx.stroke();
+    }
+
+    // 2. Mainland, Mountain, Airport, Canyon & Resort Island Shapes
+    // Main City + North Mountain + West Canyon + East Airport landmass
+    ctx.fillStyle = '#1b1236';
+    ctx.fillRect(toMapX(-1240), toMapY(-1220), toMapX(1240) - toMapX(-1240), toMapY(230) - toMapY(-1220));
+    // Ocean Bay Channel
+    ctx.fillStyle = '#09244a';
+    ctx.fillRect(0, toMapY(230), W, toMapY(650) - toMapY(230));
+    // Resort Island Sandy Beach
+    ctx.fillStyle = '#3b2d4d';
+    ctx.fillRect(toMapX(-460), toMapY(650), toMapX(460) - toMapX(-460), toMapY(1150) - toMapY(650));
+    // Sunset Pier
+    ctx.fillStyle = '#92400e';
+    ctx.fillRect(toMapX(325), toMapY(960), 10, toMapY(1180) - toMapY(960));
+    // Airport Tarmac
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(toMapX(700), toMapY(-520), toMapX(1220) - toMapX(700), toMapY(460) - toMapY(-520));
+    // Dino Canyon Red-Rock Tint
+    ctx.fillStyle = 'rgba(194, 65, 12, 0.35)';
+    ctx.fillRect(toMapX(-1220), toMapY(-420), toMapX(-660) - toMapX(-1220), toMapY(420) - toMapY(-420));
+
+    // 3. Connected Street & Highway Network
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 4;
+    roadXCoords.forEach(rx => {
+      ctx.beginPath();
+      ctx.moveTo(toMapX(rx), toMapY(-660));
+      ctx.lineTo(toMapX(rx), toMapY(660));
+      ctx.stroke();
+    });
+    roadZCoords.forEach(rz => {
+      ctx.beginPath();
+      ctx.moveTo(toMapX(-660), toMapY(rz));
+      ctx.lineTo(toMapX(660), toMapY(rz));
+      ctx.stroke();
+    });
+    // Cross-Island Expressways, Mountain Highway, Bridges & Runways
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 5;
+    [-140, 100].forEach(ez => {
+      ctx.beginPath(); ctx.moveTo(toMapX(-1150), toMapY(ez)); ctx.lineTo(toMapX(1150), toMapY(ez)); ctx.stroke();
+    });
+    ctx.beginPath(); ctx.moveTo(toMapX(0), toMapY(-1120)); ctx.lineTo(toMapX(0), toMapY(1080)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(toMapX(-220), toMapY(220)); ctx.lineTo(toMapX(-220), toMapY(670)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(toMapX(-380), toMapY(850)); ctx.lineTo(toMapX(380), toMapY(850)); ctx.stroke();
+    // Airport Runways
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 6;
+    [920, 1080].forEach(rwx => {
+      ctx.beginPath(); ctx.moveTo(toMapX(rwx), toMapY(-490)); ctx.lineTo(toMapX(rwx), toMapY(430)); ctx.stroke();
+    });
+
+    // 4. Uncollected Hidden Golden Stars
+    collectibleStars.forEach(s => {
+      if (s.collected) return;
+      const sx = toMapX(s.x);
+      const sy = toMapY(s.z);
+      ctx.fillStyle = '#ffd166';
+      ctx.beginPath();
+      ctx.arc(sx, sy, 3.6, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // 5. All 10 Handcrafted Landmarks
+    ctx.font = 'bold 10px Oswald, sans-serif';
+    ctx.textAlign = 'center';
+    ISLAND_LANDMARKS.forEach(lm => {
+      const lx = toMapX(lm.x);
+      const ly = toMapY(lm.z);
+      const found = discoveredLandmarks.has(lm.id);
+      ctx.fillStyle = found ? '#42f59b' : '#00e5ff';
+      ctx.strokeStyle = '#090512';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(lx, ly, 6.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(lm.name.split(' ').slice(0, 2).join(' '), lx, ly - 10);
+    });
+
+    // 6. Active Mission Target Blips
+    activeObjectives.forEach(o => {
+      if (o.done) return;
+      const mx = toMapX(o.x);
+      const my = toMapY(o.z);
+      ctx.fillStyle = '#ff49a8';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(mx, my, 7.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    });
+
+    // 7. Custom Cyan Waypoint
+    if (customWaypoint) {
+      const wx = toMapX(customWaypoint.x);
+      const wy = toMapY(customWaypoint.z);
+      ctx.strokeStyle = '#00e5ff';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(wx, wy, 10, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = '#00e5ff';
+      ctx.beginPath();
+      ctx.arc(wx, wy, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 8. Live Player Marker
+    const pObj = activeVehicle || leo;
+    const px = toMapX(pObj.x);
+    const py = toMapY(pObj.z);
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(-pObj.heading + Math.PI);
+    ctx.fillStyle = '#42f59b';
+    ctx.strokeStyle = '#090512';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -10);
+    ctx.lineTo(-7, 8);
+    ctx.lineTo(0, 4);
+    ctx.lineTo(7, 8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function switchModalTab(tabName) {
+    activeModalTab = tabName;
+    const isMap = tabName === 'map';
+    const tabBtnMap = document.getElementById('tabBtnMap');
+    const tabBtnMissions = document.getElementById('tabBtnMissions');
+    const panelMap = document.getElementById('tabPanelMap');
+    const panelMissions = document.getElementById('tabPanelMissions');
+    const titleEl = document.getElementById('modalMainTitle');
+    const statsEl = document.getElementById('boardStatsSub');
+
+    if (tabBtnMap) tabBtnMap.classList.toggle('active', isMap);
+    if (tabBtnMissions) tabBtnMissions.classList.toggle('active', !isMap);
+    if (panelMap) panelMap.classList.toggle('active', isMap);
+    if (panelMissions) panelMissions.classList.toggle('active', !isMap);
+    if (titleEl) titleEl.textContent = isMap ? 'Super Leo Island Map' : 'Hero Mission Board';
+
+    const collectedCount = collectibleStars.filter(s => s.collected).length;
+    if (statsEl) {
+      statsEl.textContent = `${discoveredLandmarks.size} / ${ISLAND_LANDMARKS.length} LANDMARKS • ${collectedCount} / ${collectibleStars.length} STARS • ${completedMissionIds.size} / ${MISSIONS.length} MISSIONS PASSED`;
+    }
+
+    if (isMap) {
+      renderLandmarkSidebar();
+      drawCityStreetMap();
+    } else {
+      renderMissionBoard();
+    }
+  }
+
+  function toggleMissionBoard(forceState, preferredTab = null) {
     if (!gameStarted) return;
+    if (preferredTab && missionBoardOpen && activeModalTab !== preferredTab && forceState !== false) {
+      switchModalTab(preferredTab);
+      return;
+    }
     missionBoardOpen = typeof forceState === 'boolean' ? forceState : !missionBoardOpen;
     const overlay = document.getElementById('missionBoardOverlay');
     if (overlay) overlay.classList.toggle('open', missionBoardOpen);
-    if (missionBoardOpen) renderMissionBoard();
+    if (missionBoardOpen) {
+      switchModalTab(preferredTab || activeModalTab || 'map');
+    }
   }
+
+  // Click anywhere on Interactive Street Map to drop a 3D Cyan Waypoint!
+  const cityMapCanvasEl = document.getElementById('cityMapCanvas');
+  if (cityMapCanvasEl) {
+    cityMapCanvasEl.addEventListener('click', e => {
+      const rect = cityMapCanvasEl.getBoundingClientRect();
+      const nx = (e.clientX - rect.left) / rect.width;
+      const ny = (e.clientY - rect.top) / rect.height;
+      const wx = Math.round((nx - 0.5) * 2600);
+      const wz = Math.round((ny - 0.5) * 2600);
+      setCustomWaypoint(wx, wz, `(${wx}m, ${wz}m)`);
+    });
+  }
+
+  const tabBtnMapEl = document.getElementById('tabBtnMap');
+  if (tabBtnMapEl) tabBtnMapEl.addEventListener('click', () => switchModalTab('map'));
+  const tabBtnMissionsEl = document.getElementById('tabBtnMissions');
+  if (tabBtnMissionsEl) tabBtnMissionsEl.addEventListener('click', () => switchModalTab('missions'));
 
   // --- PLAYER STATE & CONTROLS ---
   const leo = createLeoCharacter();
@@ -2455,23 +2912,24 @@
   const CAM_NAMES = ['🎥 Chase (C)', '🎥 Close (C)', '🎥 Aerial (C)'];
 
   rebuildHometownMissions();
+  updateExplorerHUD();
 
   const keys = {};
-  const zipInputEl = document.getElementById('zipInput');
 
   window.addEventListener('keydown', e => {
-    if (document.activeElement === zipInputEl) {
-      if (e.code === 'Enter') loadZipCode(zipInputEl.value);
-      return;
-    }
-
     if (e.code === 'Tab' || e.code === 'Escape') {
       e.preventDefault();
       if (document.getElementById('titleOverlay').style.display !== 'none') {
         if (gameStarted) document.getElementById('titleOverlay').style.display = 'none';
         return;
       }
-      toggleMissionBoard();
+      toggleMissionBoard(undefined, e.code === 'Tab' ? 'missions' : null);
+      return;
+    }
+
+    if (e.code === 'KeyM' && gameStarted) {
+      e.preventDefault();
+      toggleMissionBoard(undefined, 'map');
       return;
     }
 
@@ -2482,12 +2940,10 @@
     }
     if (missionBoardOpen) return;
 
-    if (e.code === 'KeyP') openZipCustomizer();
     if (e.code === 'KeyG') cycleDistrictFastTravel();
     if (e.code === 'KeyR') cycleRadioStation();
     if (e.code === 'KeyC') cycleCamera();
     if (e.code === 'KeyT') cycleTimeOfDay();
-    if (e.code === 'KeyM') toggleMute();
     if (e.code === 'KeyE' || e.code === 'Enter') toggleEnterExitVehicle();
     if (e.code === 'KeyZ' || e.code === 'KeyF') triggerVehicleGadget();
 
@@ -2575,12 +3031,16 @@
   const btnDistrictEl = document.getElementById('btnDistrict');
   if (btnDistrictEl) btnDistrictEl.addEventListener('click', cycleDistrictFastTravel);
 
+  const btnMapEl = document.getElementById('btnMap');
+  if (btnMapEl) btnMapEl.addEventListener('click', () => toggleMissionBoard(true, 'map'));
+  const explorerHudCardEl = document.getElementById('explorerHudCard');
+  if (explorerHudCardEl) explorerHudCardEl.addEventListener('click', () => toggleMissionBoard(true, 'map'));
   const btnMissionsEl = document.getElementById('btnMissions');
-  if (btnMissionsEl) btnMissionsEl.addEventListener('click', () => toggleMissionBoard());
+  if (btnMissionsEl) btnMissionsEl.addEventListener('click', () => toggleMissionBoard(true, 'missions'));
   const closeBoardBtn = document.getElementById('closeBoardBtn');
   if (closeBoardBtn) closeBoardBtn.addEventListener('click', () => toggleMissionBoard(false));
   const radarFrameEl = document.getElementById('radarFrame');
-  if (radarFrameEl) radarFrameEl.addEventListener('click', () => toggleMissionBoard());
+  if (radarFrameEl) radarFrameEl.addEventListener('click', () => toggleMissionBoard(true, 'map'));
 
   const btnRadioEl = document.getElementById('btnRadio');
   if (btnRadioEl) btnRadioEl.addEventListener('click', () => cycleRadioStation());
@@ -2597,28 +3057,6 @@
       if (m) summonAndBoardVehicle(m.recommendedVeh);
     });
   }
-
-  document.getElementById('loadZipBtn').addEventListener('click', () => {
-    sfx.init();
-    loadZipCode(zipInputEl.value);
-  });
-  document.querySelectorAll('.preset-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      sfx.init();
-      const z = chip.getAttribute('data-zip');
-      zipInputEl.value = z;
-      loadZipCode(z);
-    });
-  });
-
-  function openZipCustomizer() {
-    toggleMissionBoard(false);
-    document.getElementById('titleOverlay').style.display = 'flex';
-    zipInputEl.focus();
-    zipInputEl.select();
-  }
-  document.getElementById('btnZip').addEventListener('click', openZipCustomizer);
-  document.getElementById('zipHudCard').addEventListener('click', openZipCustomizer);
 
   // Build Bottom Vehicle Quick-Spawner Dock
   const dockEl = document.getElementById('vehicleDock');
@@ -2860,13 +3298,6 @@
   document.getElementById('startBtn').addEventListener('click', startGame);
 
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('zip')) {
-    const qZip = urlParams.get('zip');
-    zipInputEl.value = qZip;
-    loadZipCode(qZip);
-  } else {
-    loadZipCode('94040');
-  }
   if (urlParams.get('zone')) {
     const zName = urlParams.get('zone');
     const foundIdx = WORLD_DISTRICTS.findIndex(d => d.id === zName);
@@ -3132,11 +3563,13 @@
       if (hypeBar) hypeBar.style.width = Math.min(100, heroHype) + '%';
       document.getElementById('interactPrompt').style.display = 'none';
     } else {
-      leo.heading += steer * 3.2 * dt;
-      leo.speed = throttle * 24;
-      leo.x += Math.sin(leo.heading) * leo.speed * dt;
-      leo.z += Math.cos(leo.heading) * leo.speed * dt;
-      const gH = Math.max(0, getTerrainHeightAt(leo.x, leo.z));
+      const sprinting = boostPressed && throttle !== 0;
+      leo.heading += steer * 3.4 * dt;
+      leo.speed = throttle * (sprinting ? 38 : 24);
+      leo.x = Math.max(-1320, Math.min(1320, leo.x + Math.sin(leo.heading) * leo.speed * dt));
+      leo.z = Math.max(-1320, Math.min(1320, leo.z + Math.cos(leo.heading) * leo.speed * dt));
+      const onPier = Math.abs(leo.x - 340) < 11 && leo.z >= 950 && leo.z <= 1180;
+      const gH = onPier ? 1.1 : Math.max(0, getTerrainHeightAt(leo.x, leo.z));
       if (leo.y > gH || leo.vy > 0) {
         leo.y += leo.vy * dt;
         leo.vy -= 42 * dt;
@@ -3147,13 +3580,16 @@
       } else {
         leo.y = gH;
       }
-      const swing = Math.sin(performance.now() * 0.018) * (Math.abs(leo.speed) > 1 ? 0.6 : 0);
+      const strideRate = sprinting ? 0.026 : 0.018;
+      const swing = Math.sin(performance.now() * strideRate) * (Math.abs(leo.speed) > 1 ? (sprinting ? 0.82 : 0.6) : 0);
       leo.legL.rotation.x = swing;
       leo.legR.rotation.x = -swing;
       leo.group.position.set(leo.x, leo.y, leo.z);
       leo.group.rotation.y = leo.heading;
 
       document.getElementById('speedVal').textContent = Math.round(Math.abs(leo.speed));
+      const turboBar = document.getElementById('vcTurboBar');
+      if (turboBar) turboBar.style.width = (sprinting ? 70 : 100) + '%';
 
       let nearVeh = null;
       worldVehicles.forEach(v => {
@@ -3456,6 +3892,102 @@
       if (btn) btn.textContent = `${closestDist.name} (G)`;
     }
 
+    // --- EXPLORABLE OPEN-WORLD ANIMATIONS & INTERACTIONS (FOOT + CAR!) ---
+    if (lighthouseBeam) lighthouseBeam.rotation.y += dt * 0.75;
+    if (rooftopPizzaSign) rooftopPizzaSign.rotation.y += dt * 1.4;
+
+    // 1. 24 Hidden Golden Star Collectibles
+    for (let i = 0; i < collectibleStars.length; i++) {
+      const s = collectibleStars[i];
+      if (s.collected) continue;
+      s.mesh.rotation.y += dt * 2.2;
+      s.mesh.position.y = s.baseY + Math.sin(nowSec * 3.2 + i) * 0.55;
+      const dx = s.x - playerObj.x;
+      const dz = s.z - playerObj.z;
+      const dy = Math.abs(s.mesh.position.y - (playerObj.y + 2.2));
+      if (dx * dx + dz * dz < 42 && dy < 7.5) {
+        s.collected = true;
+        s.mesh.visible = false;
+        addScore(250);
+        heroHype = Math.min(100, heroHype + 18);
+        sfx.playCheckpoint();
+        spawnConfetti(s.x, s.baseY, s.z);
+        const totalFound = collectibleStars.filter(st => st.collected).length;
+        showStuntBanner(`⭐ HIDDEN STAR #${totalFound}!`, `${s.hint.toUpperCase()} • +$250`, false);
+        updateExplorerHUD();
+      }
+    }
+
+    // 2. 8 Bouncy Neon Jump Pads (Works BOTH on Foot as Leo AND in Vehicles!)
+    for (let i = 0; i < jumpPads.length; i++) {
+      const jp = jumpPads[i];
+      if (jp.cooldown > 0) jp.cooldown -= dt;
+      const d = Math.hypot(jp.x - playerObj.x, jp.z - playerObj.z);
+      if (d < 5.5 && jp.cooldown <= 0 && playerObj.y <= jp.y + 3.5) {
+        jp.cooldown = 0.85;
+        playerObj.vy = activeVehicle ? jp.power * 0.9 : jp.power;
+        sfx.playJump();
+        addScore(100);
+        showStuntBanner('⚡ SUPER BOUNCE PAD!', '+$100 EXPLORER AIR', false);
+      }
+    }
+
+    // 3. 10 Handcrafted Landmark Discoveries
+    for (let i = 0; i < ISLAND_LANDMARKS.length; i++) {
+      const lm = ISLAND_LANDMARKS[i];
+      if (discoveredLandmarks.has(lm.id)) continue;
+      if (Math.hypot(lm.x - playerObj.x, lm.z - playerObj.z) < lm.radius) {
+        discoveredLandmarks.add(lm.id);
+        addScore(500);
+        stars = Math.min(6, stars + (discoveredLandmarks.size % 2 === 1 ? 1 : 0));
+        updateHeroStars(true);
+        sfx.playFanfare();
+        showStuntBanner(`${lm.emoji} DISCOVERED!`, `${lm.name.toUpperCase()} • +$500`, false);
+        showZoneToast(lm.name);
+        updateExplorerHUD();
+      }
+    }
+
+    // 4. 22 Friendly Wandering Citizens (Cheer & Jump when Leo walks or waves nearby!)
+    for (let i = 0; i < citizens.length; i++) {
+      const c = citizens[i];
+      if (c.waveCooldown > 0) c.waveCooldown -= dt;
+      if (c.cheerTimer > 0) {
+        c.cheerTimer -= dt;
+        c.mesh.position.y = Math.abs(Math.sin(nowSec * 14 + i)) * 2.2;
+      } else {
+        c.angle += c.spd * dt;
+        const prevX = c.x;
+        const prevZ = c.z;
+        c.x = c.cx + Math.cos(c.angle) * c.r;
+        c.z = c.cz + Math.sin(c.angle) * c.r;
+        const gY = Math.max(0, getTerrainHeightAt(c.x, c.z));
+        c.mesh.position.set(c.x, gY, c.z);
+        c.mesh.rotation.y = Math.atan2(c.x - prevX, c.z - prevZ);
+        const sw = Math.sin(nowSec * 7 + i) * 0.5;
+        c.legL.rotation.x = sw;
+        c.legR.rotation.x = -sw;
+      }
+      const dToLeo = Math.hypot(c.x - playerObj.x, c.z - playerObj.z);
+      if (dToLeo < 11 && c.waveCooldown <= 0) {
+        c.waveCooldown = 8.0;
+        c.cheerTimer = 1.6;
+        addScore(50);
+        sfx.playCheckpoint();
+      }
+    }
+
+    // 5. Custom Cyan Map Waypoint Arrival Check
+    if (customWaypoint) {
+      wpRing.scale.setScalar(1 + Math.sin(nowSec * 6) * 0.15);
+      if (Math.hypot(customWaypoint.x - playerObj.x, customWaypoint.z - playerObj.z) < 18) {
+        showStuntBanner('🔷 WAYPOINT REACHED!', customWaypoint.label.toUpperCase(), false);
+        sfx.playCheckpoint();
+        customWaypoint = null;
+        waypointGroup.visible = false;
+      }
+    }
+
     drawMinimap(playerObj, curM);
   }
 
@@ -3525,6 +4057,18 @@
       ctx.stroke();
     });
 
+    // Draw nearby Uncollected Hidden Golden Stars on Radar
+    collectibleStars.forEach(s => {
+      if (s.collected) return;
+      const sx = (s.x - playerObj.x) * scale;
+      const sz = (s.z - playerObj.z) * scale;
+      if (Math.hypot(sx, sz) > rOuter - 6) return;
+      ctx.fillStyle = '#ffd166';
+      ctx.beginPath();
+      ctx.arc(sx, sz, 2.3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
     // Draw Mission Giver Letter Blips (Classic GTA Radar Letters!)
     ctx.font = 'bold 9px Oswald, sans-serif';
     ctx.textAlign = 'center';
@@ -3568,6 +4112,20 @@
       ctx.arc(clampedX, clampedZ, 3.0, 0, Math.PI * 2);
       ctx.fill();
     });
+
+    // Draw Custom Cyan Waypoint Blip (clamped to rim if far)
+    if (customWaypoint) {
+      const wx = (customWaypoint.x - playerObj.x) * scale;
+      const wz = (customWaypoint.z - playerObj.z) * scale;
+      const wDist = Math.hypot(wx, wz);
+      const maxR = rOuter - 8;
+      const cwX = wDist > maxR ? (wx / wDist) * maxR : wx;
+      const cwZ = wDist > maxR ? (wz / wDist) * maxR : wz;
+      ctx.fillStyle = '#00e5ff';
+      ctx.beginPath();
+      ctx.arc(cwX, cwZ, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     ctx.restore();
     ctx.restore();

@@ -3,26 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="description" content="Super Leo City: Vice Edition — A kid-friendly 3D open-world driving, rescue, and stunt sandbox inspired by GTA: Vice City with zero violence, custom hometown ZIP maps, and multi-step hero missions." />
-  <title>Super Leo City: Vice Edition — Kid-Friendly 3D Open-World Hero Sandbox</title>
+  <meta name="description" content="Super Leo City: Vice Edition — A kid-friendly 3D open-world island to explore on foot and by car, with 10 handcrafted landmarks, 24 hidden stars, bouncy jump pads, Kids Radio, and 8 hero missions." />
+  <title>Super Leo City: Vice Edition — Open-World Island Explorer &amp; Hero Sandbox</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <canvas id="gameCanvas"></canvas>
 
   <div id="hud">
-    <!-- TOP LEFT: Classic GTA Pager / Multi-Step Mission Objective Box -->
+    <!-- TOP LEFT: Classic GTA Pager / Active Mission + Island Explorer Progress -->
     <div class="vc-top-left">
       <div class="vc-pager-box" id="missionBriefBox">
         <div class="vc-pager-head">
           <div class="vc-giver-row">
             <span class="vc-mission-code" id="missionCode">F</span>
-            <span class="vc-mission-tag" id="missionTag">CHIEF BLAZE • HERO MISSION</span>
+            <span class="vc-mission-tag" id="missionTag">CHIEF BLAZE • SUPER LEO ISLAND</span>
           </div>
-          <span class="vc-mission-timer" id="missionTimer">01:30</span>
+          <span class="vc-mission-timer" id="missionTimer">01:50</span>
         </div>
-        <div class="vc-mission-title" id="missionTitle">Triple Fire Rescue!</div>
-        <div class="vc-mission-desc" id="missionDesc">Spray all 3 fizzy BBQ blazes with the Fire Engine [3] Water Cannon [Z]!</div>
+        <div class="vc-mission-title" id="missionTitle">Triple BBQ Fire Rescue</div>
+        <div class="vc-mission-desc" id="missionDesc">Spray all 3 fizzy backyard blazes with the Fire Engine [3] Water Cannon [Z]!</div>
         <div class="vc-mission-progress-row">
           <div class="vc-prog-track">
             <div class="vc-prog-fill" id="missionProgFill"></div>
@@ -38,10 +38,10 @@
         </div>
       </div>
 
-      <div class="vc-zip-pill" id="zipHudCard" title="Click to Customize Hometown ZIP Code (P)">
+      <div class="vc-zip-pill" id="explorerHudCard" title="Click to open Interactive Street Map (M)">
         <div>
-          <div class="zip-city" id="hudZipCity">📍 Mountain View, CA (94040)</div>
-          <div class="zip-meta" id="hudZipMeta">⛰️ Elev: 32m • ☀️ 68°F • Coastal Bay</div>
+          <div class="zip-city" id="hudExplorerStars">⭐ 0 / 24 HIDDEN STARS</div>
+          <div class="zip-meta" id="hudExplorerLandmarks">📍 0 / 10 Landmarks Discovered &bull; Press [M] for Map</div>
         </div>
       </div>
     </div>
@@ -52,7 +52,7 @@
         <span class="radio-wave">📻</span>
         <div>
           <div class="radio-station-name" id="radioStationName">Sunny FM</div>
-          <div class="radio-station-sub" id="radioStationSub">80s Kid Synth-Pop • Press [R]</div>
+          <div class="radio-station-sub" id="radioStationSub">80s Kid Synth-Pop &bull; Press [R]</div>
         </div>
       </div>
     </div>
@@ -64,7 +64,7 @@
           <div class="vc-clock" id="vcClock">16:20</div>
           <div class="vc-cash" id="scoreVal">$00000000</div>
           <div class="vc-bars-stack">
-            <div class="vc-bar-row" title="Turbo Boost">
+            <div class="vc-bar-row" title="Turbo / Sprint Energy">
               <span class="vc-bar-ico">⚡</span>
               <div class="vc-bar-track"><div class="vc-bar-fill turbo" id="vcTurboBar"></div></div>
             </div>
@@ -75,13 +75,13 @@
           </div>
         </div>
 
-        <div class="vc-gadget-slot" id="vcGadgetSlot" title="Tap or press [Z] for Vehicle Action!">
+        <div class="vc-gadget-slot" id="vcGadgetSlot" title="Tap or press [Z] for Action / Jump!">
           <span class="vc-slot-emoji" id="vehIcon">🏎️</span>
           <span class="vc-slot-key" id="vcSlotKey">[Z] ACT</span>
         </div>
       </div>
 
-      <div class="vc-stars-row" id="heroStarsRow" title="Hero Fame Stars — Complete Missions & Stunts!">
+      <div class="vc-stars-row" id="heroStarsRow" title="Hero Fame Stars — Explore, Collect Stars & Complete Missions!">
         <span class="vc-fame-label" id="starsVal">HERO FAME</span>
         <span class="vc-star" data-star="1">★</span>
         <span class="vc-star" data-star="2">★</span>
@@ -92,30 +92,30 @@
       </div>
 
       <div class="quick-toggles">
-        <button class="hud-btn missions-btn" id="btnMissions" title="Open Vice City Mission Board (TAB / ESC)">📋 Missions (TAB)</button>
-        <button class="hud-btn zip-btn" id="btnZip" title="Change Hometown ZIP Code (P)">📍 ZIP (P)</button>
-        <button class="hud-btn" id="btnDistrict" title="Fast-Travel to World District (G)">🗺️ Downtown (G)</button>
+        <button class="hud-btn zip-btn" id="btnMap" title="Open Interactive Island Street Map (M)">🗺️ Map (M)</button>
+        <button class="hud-btn missions-btn" id="btnMissions" title="Open Vice City Mission Board (TAB)">📋 Missions (TAB)</button>
+        <button class="hud-btn" id="btnDistrict" title="Fast-Travel to World District (G)">🏙️ Downtown (G)</button>
         <button class="hud-btn" id="btnRadio" title="Switch Radio Station (R)">📻 Radio (R)</button>
         <button class="hud-btn" id="btnCam" title="Switch Camera View (C)">🎥 Chase (C)</button>
         <button class="hud-btn" id="btnTime" title="Switch Time of Day (T)">🌴 Vice Sunset (T)</button>
-        <button class="hud-btn" id="btnMute" title="Toggle Sound (M)">🔊</button>
+        <button class="hud-btn" id="btnMute" title="Toggle Sound">🔊</button>
       </div>
     </div>
 
-    <!-- CENTER: Iconic Vice City "Mission Passed!" / Stunt Bonus Overlay -->
+    <!-- CENTER: Iconic Vice City "Mission Passed!" / Discovery / Stunt Overlay -->
     <div id="stuntBanner">
       <div class="stunt-main" id="stuntMain">Mission Passed!</div>
-      <div class="stunt-sub" id="stuntSub">+$1,500 • HERO FAME +</div>
+      <div class="stunt-sub" id="stuntSub">+$1,800 &bull; HERO FAME +</div>
     </div>
 
     <!-- BOTTOM LEFT: Iconic Vice City Circular Radar & Compact Key Legend -->
     <div class="vc-bottom-left">
-      <div class="vc-radar-frame" id="radarFrame" title="Click to open Mission Board & District Map (TAB)">
+      <div class="vc-radar-frame" id="radarFrame" title="Click to open Interactive Street Map (M)">
         <canvas id="minimapCanvas" width="168" height="168"></canvas>
       </div>
       <div class="vc-controls-mini">
-        <div><span class="key-pill">WASD</span> Drive &bull; <span class="key-pill">SPACE</span> Turbo/Climb &bull; <span class="key-pill">Z</span> Action</div>
-        <div><span class="key-pill">E</span> Hop In/Out &bull; <span class="key-pill">1-9</span> Rides &bull; <span class="key-pill">R</span> Radio &bull; <span class="key-pill">TAB</span> Missions</div>
+        <div><span class="key-pill">WASD</span> Move/Drive &bull; <span class="key-pill">SPACE</span> Turbo/Sprint &bull; <span class="key-pill">Z</span> Action/Jump</div>
+        <div><span class="key-pill">E</span> Walk/Drive &bull; <span class="key-pill">1-9</span> Rides &bull; <span class="key-pill">M</span> Map &bull; <span class="key-pill">TAB</span> Missions</div>
       </div>
     </div>
 
@@ -145,88 +145,96 @@
       <div class="touch-left-pad">
         <div class="t-btn" data-key="ArrowLeft">◀<span>LEFT</span></div>
         <div class="t-btn" data-key="ArrowRight">▶<span>RIGHT</span></div>
-        <div class="t-btn" id="touchExitBtn">🏃<span>HOP/WALK</span></div>
+        <div class="t-btn" id="touchExitBtn">🏃<span>WALK/CAR</span></div>
       </div>
       <div class="touch-right-pad">
-        <div class="t-btn nitro-btn" data-key="Space">⚡<span>NITRO/UP</span></div>
-        <div class="t-btn gas-btn" data-key="ArrowUp">▲<span>GAS</span></div>
-        <div class="t-btn action-btn" data-key="KeyZ" id="touchActionBtn">💦<span>ACTION</span></div>
+        <div class="t-btn nitro-btn" data-key="Space">⚡<span>TURBO/RUN</span></div>
+        <div class="t-btn gas-btn" data-key="ArrowUp">▲<span>GAS/GO</span></div>
+        <div class="t-btn action-btn" data-key="KeyZ" id="touchActionBtn">💦<span>ACT/JUMP</span></div>
         <div class="t-btn brake-btn" data-key="ArrowDown">▼<span>BRAKE</span></div>
       </div>
     </div>
   </div>
 
-  <!-- VICE CITY MISSION BOARD & DISTRICT MAP OVERLAY (TAB / ESC) -->
+  <!-- VICE CITY INTERACTIVE STREET MAP & MISSION BOARD OVERLAY (M / TAB / ESC) -->
   <div id="missionBoardOverlay">
     <div class="vc-board-card">
       <div class="vc-board-header">
         <div>
-          <div class="vc-board-title">Hero Mission Board</div>
-          <div class="vc-board-sub" id="boardStatsSub">0 / 8 MISSIONS PASSED &bull; PICK ANY KID-FRIENDLY ADVENTURE</div>
+          <div class="vc-board-title" id="modalMainTitle">Super Leo Island Map</div>
+          <div class="vc-board-sub" id="boardStatsSub">0 / 10 LANDMARKS &bull; 0 / 24 STARS &bull; 0 / 8 MISSIONS PASSED</div>
         </div>
-        <button class="vc-close-btn" id="closeBoardBtn">✕ RESUME CRUISE (TAB)</button>
+        <div class="vc-modal-tabs">
+          <button class="vc-tab-btn active" id="tabBtnMap">🗺️ Street Map (M)</button>
+          <button class="vc-tab-btn" id="tabBtnMissions">📋 Missions (TAB)</button>
+          <button class="vc-close-btn" id="closeBoardBtn">✕ RESUME</button>
+        </div>
       </div>
 
-      <div class="vc-mission-grid" id="missionBoardGrid"></div>
+      <!-- TAB 1: INTERACTIVE FULL-ISLAND STREET MAP -->
+      <div class="vc-tab-panel active" id="tabPanelMap">
+        <div class="vc-map-layout">
+          <div class="vc-map-canvas-wrap">
+            <canvas id="cityMapCanvas" width="600" height="600"></canvas>
+            <div class="vc-map-legend">
+              <span>🟢 You</span>
+              <span>⭐ Hidden Stars</span>
+              <span>📍 Landmarks</span>
+              <span>🩷 Active Mission</span>
+              <span>🔷 Click Map = Custom Waypoint</span>
+            </div>
+          </div>
+          <div class="vc-map-sidebar">
+            <div class="vc-map-hint">
+              <strong style="color:var(--vc-cyan);">EXPLORE ON FOOT OR BY CAR!</strong><br />
+              Click anywhere on the street map to drop a glowing <strong>3D Cyan Waypoint</strong>, or click any landmark below to jump straight there!
+            </div>
+            <div class="vc-landmark-list" id="landmarkList"></div>
+          </div>
+        </div>
+      </div>
 
-      <div class="vc-district-strip">
-        <div class="vc-strip-label">🌴 Fast-Travel Across All 6 Districts</div>
-        <div class="vc-district-btns" id="boardDistrictBtns"></div>
+      <!-- TAB 2: 8 KID-FRIENDLY HERO MISSIONS -->
+      <div class="vc-tab-panel" id="tabPanelMissions">
+        <div class="vc-mission-grid" id="missionBoardGrid"></div>
+        <div class="vc-district-strip">
+          <div class="vc-strip-label">🌴 Fast-Travel Across All 6 Districts</div>
+          <div class="vc-district-btns" id="boardDistrictBtns"></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- VICE CITY TITLE & HOMETOWN ZIP CUSTOMIZER MODAL -->
+  <!-- VICE CITY WELCOME TITLE OVERLAY (Handcrafted Open World First!) -->
   <div id="titleOverlay">
     <div class="title-box">
       <div class="vc-logo-wrap">
-        <div class="vc-logo-kicker">🌴 100% Kid-Friendly Open-World 3D Sandbox</div>
+        <div class="vc-logo-kicker">🌴 100% Kid-Friendly Open-World Island Sandbox</div>
         <h1 class="title-h1">SUPER LEO CITY</h1>
         <div class="title-script">Vice Edition</div>
-        <div class="title-sub">80s Neon Vibes, 8 Multi-Step Hero Missions, Kids Radio &amp; Your Real Hometown ZIP in 3D!</div>
-      </div>
-
-      <!-- Hometown ZIP Code Builder -->
-      <div class="zip-customizer">
-        <div class="zip-header">
-          <span>🌍 Customize Hometown ZIP Code (Live OpenStreetMap + Terrain)</span>
-          <span id="zipBiomeBadge" style="color:var(--vc-pink-soft);">Coastal Bay Biome</span>
-        </div>
-        <div class="zip-input-row">
-          <input type="text" id="zipInput" maxlength="10" placeholder="Enter 5-digit US ZIP (e.g. 33139)" value="94040" />
-          <button class="zip-load-btn" id="loadZipBtn">🗺️ BUILD 3D TOWN</button>
-        </div>
-        <div class="zip-presets">
-          <span style="font-size:11px;color:#94a3b8;font-weight:800;">Try Famous ZIPs:</span>
-          <button class="preset-chip" data-zip="33139">🌴 33139 Miami Vice Beach</button>
-          <button class="preset-chip" data-zip="94040">☀️ 94040 Mountain View, CA</button>
-          <button class="preset-chip" data-zip="10036">🗽 10036 NYC Times Sq</button>
-          <button class="preset-chip" data-zip="81611">🏔️ 81611 Aspen Snow</button>
-          <button class="preset-chip" data-zip="86336">🌵 86336 Sedona Red Rocks</button>
-          <button class="preset-chip" data-zip="98101">🌲 98101 Seattle, WA</button>
-        </div>
-        <div id="zipLoadStatus">✅ Ready: Mountain View, CA (94040) — Real streets, elevation terrain &amp; weather loaded!</div>
+        <div class="title-sub">Explore a Sunlit Coastal Island by Foot &amp; by Car — Packed with Secrets, Landmarks &amp; Hero Missions!</div>
       </div>
 
       <div class="feature-grid">
         <div class="feat-item">
-          <strong>🌟 8 Kid-Friendly Hero Missions</strong>
-          Extinguish 3-stop BBQ blazes, deliver timed hot pizzas, catch runaway Robo-Pups, serve ice cream &amp; roar as a T-Rex!
+          <strong>🗺️ 10 Handcrafted Explorable Landmarks</strong>
+          Walk or drive to Palm Grove Trampoline Park, Leo's Neon Pizza Plaza, Sunset Lighthouse Pier, Sunny Scoops Beach Parlor, Fire HQ &amp; Dino Canyon!
         </div>
         <div class="feat-item">
-          <strong>📻 Vice City HUD, Radar &amp; Kids Radio</strong>
-          Circular radar with mission letter blips, 6-Star Hero Fame meter, Mission Board (TAB), and 4 synth-pop radio stations (R)!
+          <strong>⭐ 24 Hidden Stars, Jump Pads &amp; Friendly Citizens</strong>
+          Hop out on foot [E] to sprint [SPACE], jump [Z], bounce off neon jump pads, wave at cheering citizens, and hunt down hidden rooftop &amp; pier stars!
         </div>
         <div class="feat-item">
-          <strong>🏎️ 9 Detailed 3D Rides + T-Rex</strong>
-          Drive the Comet GT Supercar, Fire Engine (Water Cannon), Patrol Interceptor, Monster Truck, Helicopter, Speedboat &amp; Dino!
+          <strong>🏎️ 9 Rides + T-Rex Parked Across the Island</strong>
+          Discover parked rides around town or summon any ride [1-9]: Supercar, Fire Engine, Patrol Cruiser, Ice Cream Van, Helicopter, Speedboat &amp; Dino!
         </div>
         <div class="feat-item">
-          <strong>🗺️ Real Hometown Streets &amp; Soccer</strong>
-          Type any US ZIP code to build real streets, hills &amp; weather — or score goals in the 3D Car-Soccer Stadium!
+          <strong>📻 Vice City HUD, Interactive Map &amp; 8 Missions</strong>
+          Press [M] for the interactive Street Map with click-to-waypoint, [TAB] for 8 multi-step Hero Missions, and [R] for 80s Kids Radio!
         </div>
       </div>
-      <button class="play-btn" id="startBtn">▶ CRUISE SUPER LEO CITY</button>
+
+      <button class="play-btn" id="startBtn">▶ EXPLORE SUPER LEO ISLAND</button>
     </div>
   </div>
 
