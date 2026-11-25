@@ -177,9 +177,9 @@
       sub: 'SPACE: Twin-Turbo Nitro • Z: Sport Horn',
       color: 0xef233c,
       accent: 0xffd166,
-      maxSpeed: 98,
-      accel: 64,
-      turnRate: 2.5,
+      maxSpeed: 56,
+      accel: 32,
+      turnRate: 2.1,
       grip: 0.92,
       mass: 1.2
     },
@@ -191,9 +191,9 @@
       sub: 'SPACE: Pursuit Boost • Z: Siren Strobe',
       color: 0x1e293b,
       accent: 0x38bdf8,
-      maxSpeed: 94,
-      accel: 60,
-      turnRate: 2.55,
+      maxSpeed: 53,
+      accel: 30,
+      turnRate: 2.15,
       grip: 0.93,
       mass: 1.35
     },
@@ -205,9 +205,9 @@
       sub: 'Z / F: High-Pressure 3D Water Cannon!',
       color: 0xd90429,
       accent: 0xfef08a,
-      maxSpeed: 76,
-      accel: 48,
-      turnRate: 2.05,
+      maxSpeed: 42,
+      accel: 23,
+      turnRate: 1.75,
       grip: 0.9,
       mass: 2.2
     },
@@ -219,9 +219,9 @@
       sub: 'Z / F: Hydraulic Mega-Bounce • 1.5x Ramp Air!',
       color: 0x2563eb,
       accent: 0x4ade80,
-      maxSpeed: 82,
-      accel: 54,
-      turnRate: 2.35,
+      maxSpeed: 46,
+      accel: 26,
+      turnRate: 1.95,
       grip: 0.88,
       mass: 2.0
     },
@@ -233,9 +233,9 @@
       sub: 'Z / F: Launch Rainbow Cones • Plays Jingle!',
       color: 0xf472b6,
       accent: 0x67e8f9,
-      maxSpeed: 72,
-      accel: 45,
-      turnRate: 2.25,
+      maxSpeed: 40,
+      accel: 22,
+      turnRate: 1.9,
       grip: 0.9,
       mass: 1.5
     },
@@ -247,9 +247,9 @@
       sub: 'Z / F: Launch Hot Pizzas • SPACE: Rocket Boost',
       color: 0xf59e0b,
       accent: 0xef4444,
-      maxSpeed: 88,
-      accel: 60,
-      turnRate: 2.65,
+      maxSpeed: 50,
+      accel: 30,
+      turnRate: 2.25,
       grip: 0.91,
       mass: 1.0
     },
@@ -261,9 +261,9 @@
       sub: 'SPACE: Climb Up • Z/F: Descend • Fly Anywhere!',
       color: 0x0284c7,
       accent: 0xfacc15,
-      maxSpeed: 115,
-      accel: 62,
-      turnRate: 2.4,
+      maxSpeed: 64,
+      accel: 32,
+      turnRate: 1.95,
       grip: 0.96,
       mass: 1.4,
       isFlying: true
@@ -276,9 +276,9 @@
       sub: 'Carves Ocean Waves + Amphibious Hydro-Ski!',
       color: 0x06b6d4,
       accent: 0xffffff,
-      maxSpeed: 96,
-      accel: 58,
-      turnRate: 2.4,
+      maxSpeed: 54,
+      accel: 28,
+      turnRate: 1.95,
       grip: 0.86,
       mass: 1.3,
       isBoat: true
@@ -291,9 +291,9 @@
       sub: 'Z / F: Ground-Shaking Dino Roar • SPACE: Leap!',
       color: 0x16a34a,
       accent: 0x86efac,
-      maxSpeed: 70,
-      accel: 55,
-      turnRate: 2.7,
+      maxSpeed: 38,
+      accel: 26,
+      turnRate: 2.15,
       grip: 0.94,
       mass: 2.4,
       isDino: true
@@ -1048,15 +1048,54 @@
     blockPlots.forEach((b, idx) => {
       const tex = idx % 2 === 0 ? TEXTURES.buildingGlass : TEXTURES.buildingWarm;
       const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.35, metalness: 0.25 });
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, b.d), mat);
+      const rCorner = 4.2;
+      const innerW = Math.max(12, b.w - rCorner * 1.4);
+      const innerD = Math.max(12, b.d - rCorner * 1.4);
+
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(innerW, b.h, b.d), mat);
       mesh.position.set(b.x, b.h / 2, b.z);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       scene.add(mesh);
 
-      const crown = new THREE.Mesh(new THREE.BoxGeometry(b.w + 1.2, 1.8, b.d + 1.2), new THREE.MeshBasicMaterial({ color: b.tint }));
-      crown.position.set(b.x, b.h + 0.9, b.z);
-      scene.add(crown);
+      const meshCross = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, innerD), mat);
+      meshCross.position.set(b.x, b.h / 2, b.z);
+      meshCross.castShadow = true;
+      meshCross.receiveShadow = true;
+      scene.add(meshCross);
+
+      // 4 Curved Art-Deco Corner Columns for smooth rounded tower silhouettes
+      const colGeo = new THREE.CylinderGeometry(rCorner, rCorner, b.h, 14);
+      const colMat = new THREE.MeshStandardMaterial({ color: idx % 2 === 0 ? 0xf8fafc : 0xfef3c7, roughness: 0.35, metalness: 0.2 });
+      [
+        [-innerW / 2, -innerD / 2],
+        [innerW / 2, -innerD / 2],
+        [-innerW / 2, innerD / 2],
+        [innerW / 2, innerD / 2]
+      ].forEach(([ox, oz]) => {
+        const col = new THREE.Mesh(colGeo, colMat);
+        col.position.set(b.x + ox, b.h / 2, b.z + oz);
+        col.castShadow = true;
+        scene.add(col);
+      });
+
+      // Curved Neon Art-Deco Crown Ring + Optional Dome
+      const crownRing = new THREE.Mesh(
+        new THREE.TorusGeometry(Math.min(b.w, b.d) * 0.44, 0.9, 10, 28),
+        new THREE.MeshBasicMaterial({ color: b.tint })
+      );
+      crownRing.rotation.x = Math.PI / 2;
+      crownRing.position.set(b.x, b.h + 0.8, b.z);
+      scene.add(crownRing);
+
+      if (!b.helipad && idx % 3 === 0) {
+        const dome = new THREE.Mesh(
+          new THREE.SphereGeometry(Math.min(b.w, b.d) * 0.32, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+          new THREE.MeshStandardMaterial({ color: b.tint, roughness: 0.25, metalness: 0.45 })
+        );
+        dome.position.set(b.x, b.h, b.z);
+        scene.add(dome);
+      }
 
       if (b.helipad) {
         const pad = new THREE.Mesh(new THREE.CylinderGeometry(11, 11, 0.6, 24), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
@@ -1476,22 +1515,24 @@
   function addCitizen(cx, cz, radius = 18, phase = 0) {
     const shirtColors = [0xff49a8, 0x00e5ff, 0xffd166, 0x42f59b, 0xa855f7, 0xf97316];
     const g = new THREE.Group();
-    const body = new THREE.Mesh(
-      new THREE.BoxGeometry(1.15, 1.8, 0.75),
-      new THREE.MeshStandardMaterial({ color: shirtColors[citizens.length % shirtColors.length] })
-    );
-    body.position.y = 2.1;
+    const shirtMat = new THREE.MeshStandardMaterial({ color: shirtColors[citizens.length % shirtColors.length], roughness: 0.4 });
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.65, 1.75, 14), shirtMat);
+    body.position.y = 2.05;
     body.castShadow = true;
+    const shoulders = new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 10), shirtMat);
+    shoulders.scale.set(1.25, 0.55, 0.85);
+    shoulders.position.y = 2.85;
     const head = new THREE.Mesh(
-      new THREE.SphereGeometry(0.62, 10, 10),
-      new THREE.MeshStandardMaterial({ color: 0xfde68a })
+      new THREE.SphereGeometry(0.62, 14, 14),
+      new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.45 })
     );
-    head.position.y = 3.55;
-    const legL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.2, 0.45), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
-    legL.position.set(-0.3, 0.65, 0);
+    head.position.y = 3.58;
+    const legMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 });
+    const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.2, 1.25, 10), legMat);
+    legL.position.set(-0.28, 0.65, 0);
     const legR = legL.clone();
-    legR.position.x = 0.3;
-    g.add(body, head, legL, legR);
+    legR.position.x = 0.28;
+    g.add(body, shoulders, head, legL, legR);
     g.position.set(cx, 0, cz);
     scene.add(g);
     citizens.push({
@@ -1754,7 +1795,28 @@
     citizenZones.forEach(([cx, cz, r], i) => addCitizen(cx, cz, r, i * 0.9));
   }
 
-  // --- 3D ARTICULATED VEHICLE BUILDER ---
+  // --- 3D SCULPTED CURVED VEHICLE BUILDER ---
+  function buildCurvedProfileMesh(pointsFn, width, mat, bevel = 0.24) {
+    const shape = new THREE.Shape();
+    pointsFn(shape);
+    const geo = new THREE.ExtrudeGeometry(shape, {
+      depth: Math.max(0.4, width - bevel * 2),
+      bevelEnabled: true,
+      bevelSegments: 4,
+      steps: 1,
+      bevelSize: bevel,
+      bevelThickness: bevel,
+      curveSegments: 14
+    });
+    geo.center();
+    // ExtrudeGeometry extrudes along Z; rotate so profile X -> vehicle Z (length) and depth -> vehicle X (width)
+    geo.rotateY(-Math.PI / 2);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    return mesh;
+  }
+
   function createVehicleMesh(spec) {
     const root = new THREE.Group();
     const bodyGroup = new THREE.Group();
@@ -1765,162 +1827,234 @@
     let rotorTail = null;
     const dinoLegs = [];
 
-    const mainMat = new THREE.MeshStandardMaterial({ color: spec.color, roughness: 0.25, metalness: 0.45 });
-    const accentMat = new THREE.MeshStandardMaterial({ color: spec.accent, roughness: 0.3, metalness: 0.3 });
-    const glassMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.1, metalness: 0.85 });
+    const mainMat = new THREE.MeshStandardMaterial({ color: spec.color, roughness: 0.22, metalness: 0.45 });
+    const accentMat = new THREE.MeshStandardMaterial({ color: spec.accent, roughness: 0.28, metalness: 0.35 });
+    const glassMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.08, metalness: 0.9 });
     const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.8 });
-    const rimMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.7, roughness: 0.2 });
+    const rimMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.75, roughness: 0.2 });
 
     if (spec.isDino) {
-      const torso = new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.6, 5.6), mainMat);
-      torso.position.set(0, 4.2, 0);
+      // Sculpted organic T-Rex with rounded torso, curved neck, snout & tapered tail
+      const torso = new THREE.Mesh(new THREE.SphereGeometry(2.1, 18, 14), mainMat);
+      torso.scale.set(0.85, 0.95, 1.55);
+      torso.position.set(0, 4.1, -0.2);
       torso.castShadow = true;
       bodyGroup.add(torso);
 
-      const head = new THREE.Mesh(new THREE.BoxGeometry(2.8, 2.6, 3.8), mainMat);
-      head.position.set(0, 6.8, 2.8);
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.45, 2.8, 14), mainMat);
+      neck.position.set(0, 5.7, 2.0);
+      neck.rotation.x = 0.45;
+      bodyGroup.add(neck);
+
+      const head = new THREE.Mesh(new THREE.SphereGeometry(1.55, 16, 14), mainMat);
+      head.scale.set(0.95, 0.85, 1.4);
+      head.position.set(0, 6.9, 3.2);
       head.castShadow = true;
       bodyGroup.add(head);
 
-      const jaw = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.8, 3.2), accentMat);
-      jaw.position.set(0, 5.2, 2.9);
+      const jaw = new THREE.Mesh(new THREE.SphereGeometry(1.15, 14, 10), accentMat);
+      jaw.scale.set(0.9, 0.45, 1.35);
+      jaw.position.set(0, 5.85, 3.3);
       bodyGroup.add(jaw);
 
-      [-1.42, 1.42].forEach(ex => {
-        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 8), new THREE.MeshBasicMaterial({ color: 0xfef08a }));
-        eye.position.set(ex, 7.2, 3.6);
+      [-1.15, 1.15].forEach(ex => {
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 10), new THREE.MeshBasicMaterial({ color: 0xfef08a }));
+        eye.position.set(ex, 7.3, 3.7);
         bodyGroup.add(eye);
       });
 
-      const tail = new THREE.Mesh(new THREE.ConeGeometry(1.4, 6.5, 8), mainMat);
-      tail.rotation.x = -Math.PI / 2.2;
-      tail.position.set(0, 4.0, -5.2);
+      const tail = new THREE.Mesh(new THREE.ConeGeometry(1.35, 6.8, 14), mainMat);
+      tail.rotation.x = -Math.PI / 2.15;
+      tail.position.set(0, 3.8, -5.0);
       bodyGroup.add(tail);
 
-      [-1.4, 1.4].forEach(lx => {
-        const leg = new THREE.Mesh(new THREE.BoxGeometry(1.2, 3.6, 1.8), mainMat);
+      [-1.35, 1.35].forEach(lx => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.78, 3.5, 12), mainMat);
         leg.position.set(lx, 1.8, 0);
         leg.castShadow = true;
         bodyGroup.add(leg);
         dinoLegs.push(leg);
       });
     } else if (spec.isFlying) {
-      const fuselage = new THREE.Mesh(new THREE.BoxGeometry(3.8, 3.2, 7.5), mainMat);
-      fuselage.position.set(0, 2.8, 0);
+      // Teardrop curved helicopter fuselage & bubble canopy
+      const fuselage = new THREE.Mesh(new THREE.SphereGeometry(2.3, 20, 16), mainMat);
+      fuselage.scale.set(0.92, 0.82, 1.85);
+      fuselage.position.set(0, 2.8, 0.2);
       fuselage.castShadow = true;
       bodyGroup.add(fuselage);
 
-      const cockpit = new THREE.Mesh(new THREE.SphereGeometry(2.1, 16, 12), glassMat);
-      cockpit.position.set(0, 2.9, 2.6);
+      const cockpit = new THREE.Mesh(new THREE.SphereGeometry(1.95, 18, 14), glassMat);
+      cockpit.scale.set(0.9, 0.72, 1.25);
+      cockpit.position.set(0, 3.05, 2.0);
       bodyGroup.add(cockpit);
 
-      const tailBoom = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.2, 6.5), accentMat);
-      tailBoom.position.set(0, 3.1, -6.2);
+      const tailBoom = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.85, 7.2, 14), accentMat);
+      tailBoom.rotation.x = Math.PI / 2;
+      tailBoom.position.set(0, 3.1, -5.8);
       bodyGroup.add(tailBoom);
 
+      const tailFin = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.5, 2.8, 10), mainMat);
+      tailFin.position.set(0, 3.9, -9.1);
+      tailFin.rotation.x = -0.35;
+      bodyGroup.add(tailFin);
+
       [-1.8, 1.8].forEach(sx => {
-        const skid = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 7.5, 8), rimMat);
+        const skid = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 7.6, 10), rimMat);
         skid.rotation.x = Math.PI / 2;
         skid.position.set(sx, 0.5, 0.5);
         bodyGroup.add(skid);
       });
 
       rotorMain = new THREE.Group();
-      rotorMain.position.set(0, 4.8, 0);
+      rotorMain.position.set(0, 4.9, 0);
       rotorMain.add(
-        new THREE.Mesh(new THREE.BoxGeometry(13.5, 0.12, 0.7), wheelMat),
-        new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.12, 13.5), wheelMat)
+        new THREE.Mesh(new THREE.BoxGeometry(13.5, 0.12, 0.65), wheelMat),
+        new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.12, 13.5), wheelMat)
       );
       bodyGroup.add(rotorMain);
 
       rotorTail = new THREE.Mesh(new THREE.BoxGeometry(0.15, 2.8, 0.4), accentMat);
-      rotorTail.position.set(0.65, 3.3, -9.2);
+      rotorTail.position.set(0.55, 3.4, -9.2);
       bodyGroup.add(rotorTail);
     } else if (spec.isBoat) {
-      const hull = new THREE.Mesh(new THREE.BoxGeometry(4.0, 1.5, 8.6), mainMat);
-      hull.position.set(0, 1.1, 0);
-      hull.castShadow = true;
-      bodyGroup.add(hull);
+      // Sleek curved bow speedboat hull via ExtrudeGeometry
+      const hullMesh = buildCurvedProfileMesh(s => {
+        s.moveTo(-4.4, 0.0);
+        s.lineTo(2.4, 0.0);
+        s.quadraticCurveTo(5.4, 0.25, 6.2, 1.45);
+        s.quadraticCurveTo(3.2, 1.75, -4.3, 1.45);
+        s.quadraticCurveTo(-4.7, 0.7, -4.4, 0.0);
+      }, 3.9, mainMat, 0.22);
+      hullMesh.position.set(0, 1.15, 0.6);
+      bodyGroup.add(hullMesh);
 
-      const bow = new THREE.Mesh(new THREE.ConeGeometry(2.8, 4.2, 4), accentMat);
-      bow.rotation.x = Math.PI / 2;
-      bow.rotation.y = Math.PI / 4;
-      bow.position.set(0, 1.2, 5.8);
-      bodyGroup.add(bow);
+      const deckAccent = buildCurvedProfileMesh(s => {
+        s.moveTo(-3.4, 0.0);
+        s.lineTo(3.8, 0.0);
+        s.quadraticCurveTo(4.6, 0.35, 3.2, 0.45);
+        s.lineTo(-3.4, 0.35);
+      }, 3.2, accentMat, 0.12);
+      deckAccent.position.set(0, 1.95, 0.8);
+      bodyGroup.add(deckAccent);
 
-      const windshield = new THREE.Mesh(new THREE.BoxGeometry(3.3, 1.1, 2.2), glassMat);
-      windshield.position.set(0, 2.1, 1.2);
+      const windshield = new THREE.Mesh(new THREE.SphereGeometry(1.65, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), glassMat);
+      windshield.scale.set(1.05, 0.65, 1.35);
+      windshield.position.set(0, 1.9, 1.1);
       bodyGroup.add(windshield);
     } else {
       const isTruck = spec.id === 'firetruck' || spec.id === 'icecream';
       const isMonster = spec.id === 'monster';
-      const chassisH = isTruck ? 2.8 : 1.35;
-      const chassisL = isTruck ? 9.2 : 7.2;
-      const chassisW = isMonster ? 4.2 : 3.8;
-      const liftY = isMonster ? 2.4 : 1.15;
+      const chassisH = isTruck ? 2.85 : 1.5;
+      const chassisL = isTruck ? 9.0 : 7.4;
+      const chassisW = isMonster ? 4.1 : 3.7;
+      const liftY = isMonster ? 2.35 : 1.05;
+      const cabH = isTruck ? 1.65 : 1.15;
 
-      const chassis = new THREE.Mesh(new THREE.BoxGeometry(chassisW, chassisH, chassisL), mainMat);
-      chassis.position.set(0, liftY + chassisH / 2, 0);
-      chassis.castShadow = true;
-      bodyGroup.add(chassis);
+      // Sculpted Curved Car/Truck Side Profile with Smooth Bevels!
+      const bodyMesh = buildCurvedProfileMesh(s => {
+        const hl = chassisL / 2;
+        if (isTruck) {
+          s.moveTo(-hl, 0.15);
+          s.lineTo(hl - 0.3, 0.15);
+          s.quadraticCurveTo(hl + 0.15, 0.35, hl, 1.4);
+          s.quadraticCurveTo(hl - 0.15, chassisH + cabH * 0.65, hl - 1.1, chassisH + cabH * 0.72);
+          s.lineTo(-hl + 0.45, chassisH + cabH * 0.72);
+          s.quadraticCurveTo(-hl - 0.1, chassisH + cabH * 0.6, -hl, 0.15);
+        } else {
+          // Sleek Vice City curved coupe/cruiser silhouette
+          s.moveTo(-hl + 0.25, 0.12);
+          s.lineTo(hl - 0.25, 0.12);
+          s.quadraticCurveTo(hl + 0.25, 0.4, hl, 1.05);
+          s.quadraticCurveTo(hl - 0.35, 1.52, hl - 1.75, 1.62);
+          s.quadraticCurveTo(hl - 2.35, 2.55, hl - 3.3, 2.68);
+          s.quadraticCurveTo(-0.4, 2.82, -hl + 2.05, 2.55);
+          s.quadraticCurveTo(-hl + 1.15, 1.72, -hl + 0.25, 1.58);
+          s.quadraticCurveTo(-hl - 0.2, 1.25, -hl + 0.25, 0.12);
+        }
+      }, chassisW, mainMat, 0.26);
+      bodyMesh.position.set(0, liftY + (isTruck ? 1.9 : 1.38), 0);
+      bodyGroup.add(bodyMesh);
 
-      const stripe = new THREE.Mesh(new THREE.BoxGeometry(chassisW + 0.1, 0.45, chassisL * 0.88), accentMat);
-      stripe.position.set(0, liftY + chassisH * 0.45, 0);
+      // Curved Tinted Glass Greenhouse Canopy
+      const glassMesh = buildCurvedProfileMesh(s => {
+        if (isTruck) {
+          s.moveTo(0.8, 0);
+          s.lineTo(chassisL / 2 - 0.3, 0);
+          s.quadraticCurveTo(chassisL / 2 - 0.45, 1.2, chassisL / 2 - 1.15, 1.35);
+          s.lineTo(0.8, 1.35);
+        } else {
+          s.moveTo(-1.75, 0);
+          s.lineTo(1.75, 0);
+          s.quadraticCurveTo(1.2, 1.02, 0.35, 1.12);
+          s.quadraticCurveTo(-0.7, 1.18, -1.75, 0);
+        }
+      }, chassisW * 0.88, glassMat, 0.12);
+      glassMesh.position.set(0, liftY + (isTruck ? chassisH + 0.45 : chassisH + 0.66), isTruck ? 0.2 : -0.2);
+      bodyGroup.add(glassMesh);
+
+      // Rounded Racing / Side Accent Trim
+      const stripe = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.18, 0.18, chassisL * 0.84, 10),
+        accentMat
+      );
+      stripe.rotation.x = Math.PI / 2;
+      stripe.scale.set(chassisW * 2.85, 1, 1);
+      stripe.position.set(0, liftY + (isTruck ? 1.3 : 0.78), 0);
       bodyGroup.add(stripe);
 
-      const cabL = isTruck ? chassisL * 0.72 : chassisL * 0.52;
-      const cabH = isTruck ? 1.8 : 1.25;
-      const cabin = new THREE.Mesh(new THREE.BoxGeometry(chassisW * 0.86, cabH, cabL), glassMat);
-      cabin.position.set(0, liftY + chassisH + cabH / 2 - 0.1, isTruck ? 0.4 : -0.3);
-      cabin.castShadow = true;
-      bodyGroup.add(cabin);
-
-      const roof = new THREE.Mesh(new THREE.BoxGeometry(chassisW * 0.82, 0.25, cabL * 0.88), mainMat);
-      roof.position.set(0, liftY + chassisH + cabH, isTruck ? 0.4 : -0.3);
-      bodyGroup.add(roof);
-
       if (spec.id === 'supercar') {
-        const wing = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.22, 1.1), accentMat);
-        wing.position.set(0, liftY + chassisH + 0.85, -chassisL / 2 + 0.5);
+        const wing = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 3.8, 12), accentMat);
+        wing.rotation.z = Math.PI / 2;
+        wing.scale.set(1, 1, 2.8);
+        wing.position.set(0, liftY + chassisH + 0.92, -chassisL / 2 + 0.65);
         bodyGroup.add(wing);
       } else if (spec.id === 'police' || spec.id === 'firetruck') {
-        const barRed = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.45, 0.6), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
-        barRed.position.set(-0.75, liftY + chassisH + cabH + 0.3, 0.4);
-        const barBlue = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.45, 0.6), new THREE.MeshBasicMaterial({ color: 0x3b82f6 }));
-        barBlue.position.set(0.75, liftY + chassisH + cabH + 0.3, 0.4);
+        const barY = liftY + (isTruck ? chassisH + cabH * 0.72 + 0.35 : chassisH + cabH + 0.22);
+        const barRed = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 10), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
+        barRed.scale.set(1.4, 0.65, 0.8);
+        barRed.position.set(-0.75, barY, 0.4);
+        const barBlue = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 10), new THREE.MeshBasicMaterial({ color: 0x3b82f6 }));
+        barBlue.scale.set(1.4, 0.65, 0.8);
+        barBlue.position.set(0.75, barY, 0.4);
         bodyGroup.add(barRed, barBlue);
         if (spec.id === 'firetruck') {
-          const ladder = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.5, 7.6), new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.4 }));
-          ladder.position.set(0, liftY + chassisH + cabH + 0.55, -0.5);
+          const ladder = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.42, 7.2), new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.4 }));
+          ladder.position.set(0, barY + 0.22, -0.5);
           bodyGroup.add(ladder);
         }
       } else if (spec.id === 'icecream') {
-        const cone = new THREE.Mesh(new THREE.ConeGeometry(0.95, 2.4, 12), new THREE.MeshStandardMaterial({ color: 0xf59e0b }));
+        const roofY = liftY + chassisH + cabH * 0.72;
+        const cone = new THREE.Mesh(new THREE.ConeGeometry(0.95, 2.4, 14), new THREE.MeshStandardMaterial({ color: 0xf59e0b }));
         cone.rotation.x = Math.PI * 0.78;
-        cone.position.set(0, liftY + chassisH + cabH + 1.1, 0.2);
-        const scoop = new THREE.Mesh(new THREE.SphereGeometry(1.05, 14, 14), new THREE.MeshStandardMaterial({ color: 0xf472b6 }));
-        scoop.position.set(0, liftY + chassisH + cabH + 2.1, 0.8);
+        cone.position.set(0, roofY + 1.0, 0.2);
+        const scoop = new THREE.Mesh(new THREE.SphereGeometry(1.05, 16, 16), new THREE.MeshStandardMaterial({ color: 0xf472b6 }));
+        scoop.position.set(0, roofY + 2.0, 0.8);
         bodyGroup.add(cone, scoop);
       } else if (spec.id === 'pizza') {
-        const pie = new THREE.Mesh(new THREE.CylinderGeometry(1.35, 1.35, 0.35, 18), new THREE.MeshBasicMaterial({ color: 0xfacc15 }));
-        pie.position.set(0, liftY + chassisH + cabH + 0.35, -0.3);
+        const pie = new THREE.Mesh(new THREE.CylinderGeometry(1.35, 1.35, 0.35, 20), new THREE.MeshBasicMaterial({ color: 0xfacc15 }));
+        pie.position.set(0, liftY + chassisH + cabH + 0.3, -0.25);
         bodyGroup.add(pie);
       }
 
+      // Rounded Headlights & Taillights
       const hlMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
       const tlMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
-      [-1.25, 1.25].forEach(lx => {
-        const hl = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.45, 0.2), hlMat);
-        hl.position.set(lx, liftY + 0.7, chassisL / 2 + 0.05);
-        const tl = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.4, 0.2), tlMat);
-        tl.position.set(lx, liftY + 0.75, -chassisL / 2 - 0.05);
+      [-1.18, 1.18].forEach(lx => {
+        const hl = new THREE.Mesh(new THREE.SphereGeometry(0.36, 12, 10), hlMat);
+        hl.scale.set(1.2, 0.8, 0.5);
+        hl.position.set(lx, liftY + 0.82, chassisL / 2 + 0.02);
+        const tl = new THREE.Mesh(new THREE.SphereGeometry(0.36, 12, 10), tlMat);
+        tl.scale.set(1.3, 0.7, 0.45);
+        tl.position.set(lx, liftY + 0.88, -chassisL / 2 - 0.02);
         bodyGroup.add(hl, tl);
       });
 
-      const wheelRadius = isMonster ? 1.55 : 0.95;
-      const wheelWidth = isMonster ? 1.15 : 0.65;
-      const wheelX = chassisW / 2 + wheelWidth * 0.32;
-      const wheelZ = chassisL * 0.33;
+      // Smooth Rounded Tires, Alloy Hubs & Curved Wheel-Arch Flares
+      const wheelRadius = isMonster ? 1.55 : 0.96;
+      const wheelWidth = isMonster ? 1.15 : 0.68;
+      const wheelX = chassisW / 2 + wheelWidth * 0.26;
+      const wheelZ = chassisL * 0.32;
+      const archGeo = new THREE.TorusGeometry(wheelRadius + 0.25, 0.18, 8, 16, Math.PI);
 
       [
         { x: -wheelX, z: wheelZ, front: true },
@@ -1928,12 +2062,17 @@
         { x: -wheelX, z: -wheelZ, front: false },
         { x: wheelX, z: -wheelZ, front: false }
       ].forEach(wp => {
+        const arch = new THREE.Mesh(archGeo, accentMat);
+        arch.rotation.y = Math.PI / 2;
+        arch.position.set(wp.x * 0.96, wheelRadius + 0.12, wp.z);
+        bodyGroup.add(arch);
+
         const wGroup = new THREE.Group();
         wGroup.position.set(wp.x, wheelRadius, wp.z);
-        const tire = new THREE.Mesh(new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelWidth, 18), wheelMat);
+        const tire = new THREE.Mesh(new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelWidth, 22), wheelMat);
         tire.rotation.z = Math.PI / 2;
         tire.castShadow = true;
-        const hub = new THREE.Mesh(new THREE.CylinderGeometry(wheelRadius * 0.55, wheelRadius * 0.55, wheelWidth + 0.05, 12), rimMat);
+        const hub = new THREE.Mesh(new THREE.CylinderGeometry(wheelRadius * 0.56, wheelRadius * 0.56, wheelWidth + 0.06, 16), rimMat);
         hub.rotation.z = Math.PI / 2;
         wGroup.add(tire, hub);
         root.add(wGroup);
@@ -1944,7 +2083,7 @@
     const flameMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
     const flameGroup = new THREE.Group();
     [-0.9, 0.9].forEach(fx => {
-      const f = new THREE.Mesh(new THREE.ConeGeometry(0.45, 2.6, 10), flameMat);
+      const f = new THREE.Mesh(new THREE.ConeGeometry(0.45, 2.6, 12), flameMat);
       f.rotation.x = -Math.PI / 2;
       f.position.set(fx, 1.2, -4.6);
       flameGroup.add(f);
@@ -1979,6 +2118,7 @@
       heading: 0,
       speed: 0,
       steerAngle: 0,
+      currentSteer: 0,
       airTime: 0
     };
   }
@@ -1988,26 +2128,36 @@
     const shirtMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.4 });
     const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 });
     const skinMat = new THREE.MeshStandardMaterial({ color: 0xfdba74, roughness: 0.5 });
-    const capMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4 });
+    const capMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.35 });
 
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.5, 0.8), shirtMat);
+    // Smooth cylindrical torso + rounded shoulders
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.54, 0.62, 1.55, 16), shirtMat);
     torso.position.y = 2.1;
     torso.castShadow = true;
     group.add(torso);
 
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.65, 14, 14), skinMat);
-    head.position.y = 3.45;
+    const shoulders = new THREE.Mesh(new THREE.SphereGeometry(0.62, 14, 10), shirtMat);
+    shoulders.scale.set(1.25, 0.55, 0.85);
+    shoulders.position.y = 2.82;
+    group.add(shoulders);
+
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.66, 18, 18), skinMat);
+    head.position.y = 3.5;
     head.castShadow = true;
     group.add(head);
 
-    const cap = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.35, 1.35), capMat);
-    cap.position.set(0, 3.95, 0.15);
-    group.add(cap);
+    // Domed baseball cap + curved visor
+    const capDome = new THREE.Mesh(new THREE.SphereGeometry(0.69, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), capMat);
+    capDome.position.y = 3.58;
+    const capBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.6, 0.14, 14), capMat);
+    capBrim.scale.set(1, 1, 1.25);
+    capBrim.position.set(0, 3.68, 0.46);
+    group.add(capDome, capBrim);
 
-    const legL = new THREE.Mesh(new THREE.BoxGeometry(0.48, 1.3, 0.52), pantsMat);
-    legL.position.set(-0.32, 0.7, 0);
-    const legR = new THREE.Mesh(new THREE.BoxGeometry(0.48, 1.3, 0.52), pantsMat);
-    legR.position.set(0.32, 0.7, 0);
+    const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.22, 1.32, 12), pantsMat);
+    legL.position.set(-0.3, 0.68, 0);
+    const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.22, 1.32, 12), pantsMat);
+    legR.position.set(0.3, 0.68, 0);
     group.add(legL, legR);
 
     group.visible = false;
@@ -3417,27 +3567,33 @@
         let maxSpd = spec.maxSpeed;
         let acc = spec.accel;
         if (boostPressed && nitro > 2) {
-          maxSpd *= 1.38;
-          acc *= 1.65;
-          nitro = Math.max(0, nitro - 28 * dt);
+          maxSpd *= 1.32;
+          acc *= 1.45;
+          nitro = Math.max(0, nitro - 26 * dt);
           v.flameGroup.visible = true;
           if (Math.random() < 0.12) sfx.playBoost();
         } else {
-          nitro = Math.min(100, nitro + 16 * dt);
+          nitro = Math.min(100, nitro + 18 * dt);
           v.flameGroup.visible = false;
         }
 
         if (throttle !== 0) {
-          v.speed += throttle * acc * dt;
+          // Stronger braking when reversing direction, smooth gentle acceleration forward
+          const braking = Math.sign(throttle) !== Math.sign(v.speed) && Math.abs(v.speed) > 2;
+          v.speed += throttle * acc * (braking ? 1.85 : 1.0) * dt;
         } else {
-          v.speed *= Math.pow(0.22, dt);
+          v.speed *= Math.pow(0.18, dt);
         }
-        v.speed = Math.max(-maxSpd * 0.45, Math.min(maxSpd, v.speed));
+        v.speed = Math.max(-maxSpd * 0.42, Math.min(maxSpd, v.speed));
 
-        const turnFactor = Math.abs(v.speed) > 2 ? Math.sign(v.speed) : 1;
-        v.steerAngle = steer * 0.45;
-        if (Math.abs(v.speed) > 0.8) {
-          v.heading += steer * spec.turnRate * turnFactor * dt;
+        // Smooth interpolated, speed-sensitive steering curve for silky cornering
+        v.currentSteer = (v.currentSteer || 0) + (steer - (v.currentSteer || 0)) * Math.min(1, dt * 8.5);
+        const turnDir = Math.abs(v.speed) > 1.5 ? Math.sign(v.speed) : 1;
+        const lowSpdRamp = Math.min(1, Math.abs(v.speed) / 10);
+        const highSpdSmooth = 1 - Math.min(0.32, Math.abs(v.speed) / 130);
+        v.steerAngle = v.currentSteer * 0.46;
+        if (Math.abs(v.speed) > 0.6) {
+          v.heading += v.currentSteer * spec.turnRate * turnDir * lowSpdRamp * highSpdSmooth * dt;
         }
 
         const nextX = v.x + Math.sin(v.heading) * v.speed * dt;
@@ -3493,7 +3649,7 @@
             groundHeight = Math.max(groundHeight, rampY);
 
             // Launch into the sky when reaching the top of a takeoff ramp at speed!
-            if (!r.noRing && t > 0.78 && Math.abs(v.speed) > 32 && v.vy <= 2) {
+            if (!r.noRing && t > 0.78 && Math.abs(v.speed) > 20 && v.vy <= 2) {
               // Ensure player is moving toward the ramp launch direction
               const fwdDot =
                 r.dir === 'N' ? -Math.cos(v.heading) :
@@ -3501,7 +3657,7 @@
                 r.dir === 'E' ? Math.sin(v.heading) : -Math.sin(v.heading);
               if (fwdDot * Math.sign(v.speed) > 0.35) {
                 const jumpMult = spec.id === 'monster' ? 1.45 : 1.0;
-                v.vy = Math.abs(v.speed) * 0.42 * jumpMult;
+                v.vy = Math.abs(v.speed) * 0.58 * jumpMult;
                 sfx.playJump();
               }
             }
